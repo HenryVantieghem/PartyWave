@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,97 +6,131 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
+import { useUIStore } from '@/stores/uiStore';
 import { Colors } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { formatRelativeTime } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
-// Mock crew data
-const mockCrew = [
-  {
-    id: '1',
-    name: 'Sarah Chen',
-    username: '@sarahchen',
-    avatar: undefined,
-    title: 'Party Legend',
-    titleIcon: 'trophy',
-    titleColor: Colors.accent.gold,
-    parties: 15,
-    energy: 95,
-    lastPartied: '2 days ago',
-    isBFF: true,
-  },
-  {
-    id: '2',
-    name: 'Mike Johnson',
-    username: '@mikej',
-    avatar: undefined,
-    title: 'Host Master',
-    titleIcon: 'home',
-    titleColor: Colors.text.secondary,
-    parties: 8,
-    energy: 78,
-    lastPartied: '1 week ago',
-    isBFF: false,
-  },
-  {
-    id: '3',
-    name: 'Emma Davis',
-    username: '@emmad',
-    avatar: undefined,
-    title: 'Memory Maker',
-    titleIcon: 'camera',
-    titleColor: Colors.accent.blue,
-    parties: 12,
-    energy: 89,
-    lastPartied: '3 days ago',
-    isBFF: true,
-  },
-];
-
-const mockSuggestions = [
-  {
-    id: '4',
-    name: 'Alex Rivera',
-    username: '@alexr',
-    avatar: undefined,
-    mutualFriends: 5,
-  },
-  {
-    id: '5',
-    name: 'Jordan Kim',
-    username: '@jordank',
-    avatar: undefined,
-    mutualFriends: 3,
-  },
-];
-
 export default function CrewScreen() {
   const router = useRouter();
-  const { profile } = useAuthStore();
+  const { profile, user } = useAuthStore();
+  const {
+    connections,
+    users,
+    pendingRequests,
+    isLoading,
+    fetchConnections,
+    fetchPendingRequests,
+    searchUsers,
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    removeConnection,
+  } = useUserStore();
+  const { showToast } = useUIStore();
   const [activeTab, setActiveTab] = useState<'crew' | 'suggestions'>('crew');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchConnections(profile.id);
+      fetchPendingRequests(profile.id);
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      handleSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const handleSearch = async () => {
+    if (!profile?.id) return;
+    setIsSearching(true);
+    try {
+      const results = await searchUsers(searchQuery);
+      // Filter out current user and existing connections
+      const filtered = results.filter(
+        (u) =>
+          u.id !== profile.id &&
+          !connections.some((c) => c.friend_id === u.id)
+      );
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleTabChange = (tab: 'crew' | 'suggestions') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveTab(tab);
   };
 
+  const handleAddFriend = async (friendId: string) => {
+    if (!profile?.id) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await sendConnectionRequest(profile.id, friendId);
+      showToast('Friend request sent!', 'success');
+      setSearchResults(searchResults.filter((u) => u.id !== friendId));
+    } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showToast(error.message || 'Failed to send request', 'error');
+    }
+  };
+
+  const handleAcceptRequest = async (connectionId: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await acceptConnectionRequest(connectionId);
+      showToast('Friend request accepted!', 'success');
+      if (profile?.id) {
+        fetchConnections(profile.id);
+        fetchPendingRequests(profile.id);
+      }
+    } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showToast(error.message || 'Failed to accept request', 'error');
+    }
+  };
+
+  const handleInviteToParty = (friendId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // TODO: Navigate to party creation with friend pre-selected
+    router.push('/party/create');
+  };
+
   const stats = [
-    { icon: 'people', value: 156, label: 'Friends' },
-    { icon: 'star', value: 23, label: 'Party BFFs' },
-    { icon: 'heart', value: 8, label: 'New This Month' },
+    { icon: 'people', value: connections.length, label: 'Friends' },
+    { icon: 'star', value: connections.filter((c) => (c.friend?.party_score || 0) > 100).length, label: 'Party BFFs' },
+    { icon: 'heart', value: pendingRequests.length, label: 'New Requests' },
   ];
+
+  // Get BFF status (simplified - could be based on party interactions)
+  const getFriendTitle = (friend: any) => {
+    if (friend.party_score > 100) return { title: 'Party Legend', icon: 'trophy', color: Colors.accent.gold };
+    if (friend.total_parties_hosted > 10) return { title: 'Host Master', icon: 'home', color: Colors.text.secondary };
+    if (friend.total_parties_attended > 20) return { title: 'Memory Maker', icon: 'camera', color: Colors.accent.blue };
+    return { title: 'Party Friend', icon: 'people', color: Colors.text.secondary };
+  };
 
   return (
     <View style={styles.container}>
@@ -174,6 +208,42 @@ export default function CrewScreen() {
           {/* Content */}
           {activeTab === 'crew' ? (
             <View style={styles.content}>
+              {pendingRequests.length > 0 && (
+                <View style={styles.section}>
+                  <Text variant="h4" weight="bold" style={styles.sectionTitle}>
+                    Pending Requests
+                  </Text>
+                  {pendingRequests.map((request) => (
+                    <Card key={request.id} variant="glass" style={styles.memberCard}>
+                      <View style={styles.memberContent}>
+                        <Avatar
+                          source={request.friend?.avatar_url}
+                          name={request.friend?.display_name}
+                          size="lg"
+                          gradient
+                        />
+                        <View style={styles.memberInfo}>
+                          <Text variant="body" weight="bold" style={styles.memberName}>
+                            {request.friend?.display_name}
+                          </Text>
+                          <Text variant="caption" color="secondary" style={styles.memberUsername}>
+                            @{request.friend?.username}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.acceptButton}
+                          onPress={() => handleAcceptRequest(request.id)}
+                        >
+                          <Text variant="label" color="white" weight="semibold">
+                            Accept
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </Card>
+                  ))}
+                </View>
+              )}
+
               <View style={styles.sectionHeader}>
                 <Text variant="h4" weight="bold" style={styles.sectionTitle}>
                   Your Party Crew
@@ -183,106 +253,132 @@ export default function CrewScreen() {
                 </Text>
               </View>
 
-              {mockCrew.map((member) => (
-                <Card key={member.id} variant="glass" style={styles.memberCard}>
-                  <View style={styles.memberContent}>
-                    <Avatar
-                      source={member.avatar}
-                      name={member.name}
-                      size="lg"
-                      gradient
-                    />
-                    <View style={styles.memberInfo}>
-                      <View style={styles.memberHeader}>
-                        <Text variant="body" weight="bold" style={styles.memberName}>
-                          {member.name}
-                        </Text>
-                        {member.isBFF && (
-                          <Ionicons name="star" size={16} color={Colors.accent.gold} />
-                        )}
-                      </View>
-                      <View style={styles.memberTitleRow}>
-                        <Ionicons name={member.titleIcon as any} size={14} color={member.titleColor} />
-                        <Text variant="caption" color="secondary" style={styles.memberTitle}>
-                          {member.title}
-                        </Text>
-                      </View>
-                      <View style={styles.memberStats}>
-                        <View style={styles.memberStatItem}>
-                          <Ionicons name="calendar" size={14} color={Colors.text.tertiary} />
-                          <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                            {member.parties} parties
-                          </Text>
+              {isLoading && connections.length === 0 ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+              ) : connections.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="people-outline" size={48} color={Colors.text.tertiary} />
+                  <Text variant="body" center color="secondary" style={styles.emptyText}>
+                    No friends yet. Start adding people to build your crew!
+                  </Text>
+                </View>
+              ) : (
+                connections.map((connection) => {
+                  const friend = connection.friend;
+                  if (!friend) return null;
+                  const titleInfo = getFriendTitle(friend);
+                  const isBFF = friend.party_score > 100;
+
+                  return (
+                    <Card key={connection.id} variant="glass" style={styles.memberCard}>
+                      <View style={styles.memberContent}>
+                        <Avatar
+                          source={friend.avatar_url}
+                          name={friend.display_name}
+                          size="lg"
+                          gradient
+                        />
+                        <View style={styles.memberInfo}>
+                          <View style={styles.memberHeader}>
+                            <Text variant="body" weight="bold" style={styles.memberName}>
+                              {friend.display_name}
+                            </Text>
+                            {isBFF && (
+                              <Ionicons name="star" size={16} color={Colors.accent.gold} />
+                            )}
+                          </View>
+                          <View style={styles.memberTitleRow}>
+                            <Ionicons name={titleInfo.icon as any} size={14} color={titleInfo.color} />
+                            <Text variant="caption" color="secondary" style={styles.memberTitle}>
+                              {titleInfo.title}
+                            </Text>
+                          </View>
+                          <View style={styles.memberStats}>
+                            <View style={styles.memberStatItem}>
+                              <Ionicons name="calendar" size={14} color={Colors.text.tertiary} />
+                              <Text variant="caption" color="tertiary" style={styles.memberStatText}>
+                                {friend.total_parties_attended} parties
+                              </Text>
+                            </View>
+                            <View style={styles.memberStatItem}>
+                              <Ionicons name="flash" size={14} color={Colors.accent.orange} />
+                              <Text variant="caption" color="tertiary" style={styles.memberStatText}>
+                                {friend.party_score} score
+                              </Text>
+                            </View>
+                          </View>
                         </View>
-                        <View style={styles.memberStatItem}>
-                          <Ionicons name="flash" size={14} color={Colors.accent.orange} />
-                          <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                            {member.energy}% energy
-                          </Text>
-                        </View>
+                        <TouchableOpacity
+                          style={styles.inviteButton}
+                          onPress={() => handleInviteToParty(friend.id)}
+                        >
+                          <Ionicons name="add" size={20} color={Colors.white} />
+                        </TouchableOpacity>
                       </View>
-                      <Text variant="caption" color="tertiary" style={styles.lastPartied}>
-                        Last partied: {member.lastPartied}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.inviteButton}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        // TODO: Invite to party
-                      }}
-                    >
-                      <Ionicons name="add" size={20} color={Colors.white} />
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-              ))}
+                    </Card>
+                  );
+                })
+              )}
             </View>
           ) : (
             <View style={styles.content}>
               <View style={styles.sectionHeader}>
                 <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                  Suggested Friends
+                  {searchQuery.length > 2 ? 'Search Results' : 'Suggested Friends'}
                 </Text>
                 <Text variant="caption" color="tertiary" style={styles.sectionSubtitle}>
-                  People you might know
+                  {searchQuery.length > 2 ? 'Find people to add' : 'People you might know'}
                 </Text>
               </View>
 
-              {mockSuggestions.map((suggestion) => (
-                <Card key={suggestion.id} variant="glass" style={styles.memberCard}>
-                  <View style={styles.memberContent}>
-                    <Avatar
-                      source={suggestion.avatar}
-                      name={suggestion.name}
-                      size="lg"
-                      gradient
-                    />
-                    <View style={styles.memberInfo}>
-                      <Text variant="body" weight="bold" style={styles.memberName}>
-                        {suggestion.name}
-                      </Text>
-                      <Text variant="caption" color="secondary" style={styles.memberUsername}>
-                        {suggestion.username}
-                      </Text>
-                      <Text variant="caption" color="tertiary" style={styles.mutualFriends}>
-                        {suggestion.mutualFriends} mutual friends
-                      </Text>
+              {isSearching ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+              ) : searchResults.length === 0 && searchQuery.length > 2 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="search-outline" size={48} color={Colors.text.tertiary} />
+                  <Text variant="body" center color="secondary" style={styles.emptyText}>
+                    No users found
+                  </Text>
+                </View>
+              ) : (
+                searchResults.map((user) => (
+                  <Card key={user.id} variant="glass" style={styles.memberCard}>
+                    <View style={styles.memberContent}>
+                      <Avatar
+                        source={user.avatar_url}
+                        name={user.display_name}
+                        size="lg"
+                        gradient
+                      />
+                      <View style={styles.memberInfo}>
+                        <Text variant="body" weight="bold" style={styles.memberName}>
+                          {user.display_name}
+                        </Text>
+                        <Text variant="caption" color="secondary" style={styles.memberUsername}>
+                          @{user.username}
+                        </Text>
+                        {user.bio && (
+                          <Text variant="caption" color="tertiary" style={styles.memberBio} numberOfLines={1}>
+                            {user.bio}
+                          </Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => handleAddFriend(user.id)}
+                      >
+                        <Text variant="label" color="white" weight="semibold">
+                          Add
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        // TODO: Add friend
-                      }}
-                    >
-                      <Text variant="label" color="white" weight="semibold">
-                        Add
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-              ))}
+                  </Card>
+                ))
+              )}
             </View>
           )}
         </ScrollView>
@@ -445,6 +541,31 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primary,
+  },
+  acceptButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.success,
+  },
+  loadingContainer: {
+    paddingVertical: Spacing['3xl'],
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: Spacing['3xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    marginTop: Spacing.md,
+    maxWidth: 280,
+  },
+  memberBio: {
+    fontSize: 11,
+    marginTop: Spacing.xs,
+  },
+  section: {
+    marginBottom: Spacing.xl,
   },
 });
 

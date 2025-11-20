@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { usePartyStore } from '@/stores/partyStore';
 import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -45,8 +46,24 @@ export default function DiscoverScreen() {
   ];
 
   const quickActions = [
-    { icon: 'flash', label: 'Start Party', color: Colors.primary, action: () => router.push('/party/create') },
-    { icon: 'people', label: 'Invite Crew', color: Colors.secondary, action: () => {} },
+    {
+      icon: 'flash',
+      label: 'Start Party',
+      color: Colors.primary,
+      action: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/party/create');
+      },
+    },
+    {
+      icon: 'people',
+      label: 'Invite Crew',
+      color: Colors.secondary,
+      action: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/(tabs)/crew');
+      },
+    },
   ];
 
   return (
@@ -97,7 +114,10 @@ export default function DiscoverScreen() {
                     styles.proximityCircle,
                     { transform: [{ scale: index === 1 ? 1 : 0.85 }] },
                   ]}
-                  onPress={() => {/* TODO: Navigate to party detail */}}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/party/${party.id}`);
+                  }}
                 >
                   <LinearGradient
                     colors={['rgba(255, 107, 107, 0.15)', 'rgba(255, 107, 107, 0.05)']}
