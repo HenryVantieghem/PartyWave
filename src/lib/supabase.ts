@@ -150,3 +150,29 @@ export const deleteFile = async (bucket: string, path: string) => {
   const { error } = await supabase.storage.from(bucket).remove([path]);
   if (error) throw error;
 };
+
+// Upload file from URI (React Native)
+export const uploadFileFromUri = async (
+  bucket: string,
+  path: string,
+  uri: string,
+  contentType: string = 'image/jpeg'
+) => {
+  try {
+    // Fetch the file from the URI
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, blob, {
+        contentType,
+        upsert: false,
+      });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};

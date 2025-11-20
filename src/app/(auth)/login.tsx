@@ -135,10 +135,10 @@ export default function LoginScreen() {
                 error={errors.password}
               />
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  // TODO: Implement forgot password
+                  router.push('/(auth)/forgot-password');
                 }}
                 style={styles.forgotPassword}
               >

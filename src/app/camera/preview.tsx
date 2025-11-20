@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
+import { usePartyStore } from '@/stores/partyStore';
 import { Colors } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
@@ -24,28 +25,34 @@ export default function CameraPreviewScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { profile } = useAuthStore();
+  const { uploadMemory } = usePartyStore();
   const [caption, setCaption] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const imageUri = params.uri as string;
+  const partyId = params.partyId as string | undefined;
 
   const handlePost = async () => {
-    if (!imageUri) return;
+    if (!imageUri || !profile?.id) return;
 
     try {
       setIsPosting(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // TODO: Upload image to Supabase Storage and create party_memory
-      // For now, just show success and navigate back
+      // Upload image and create memory
+      await uploadMemory(imageUri, profile.id, partyId, caption);
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Success', 'Photo posted to your party memories!', [
         {
           text: 'OK',
-          onPress: () => router.back(),
+          onPress: () => {
+            // Navigate back to the previous screen (camera or party detail)
+            router.back();
+          },
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to post photo');
+      Alert.alert('Error', error.message || 'Failed to post photo');
     } finally {
       setIsPosting(false);
     }

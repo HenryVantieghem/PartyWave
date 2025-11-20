@@ -105,7 +105,14 @@ export default function ProfileScreen() {
 
   const handleMenuPress = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Coming Soon', 'This feature is coming soon!');
+
+    // Implemented routes
+    if (route === '/profile/edit' || route === '/settings') {
+      router.push(route as any);
+    } else {
+      // Show coming soon for unimplemented features
+      Alert.alert('Coming Soon', 'This feature is coming soon!');
+    }
   };
 
   const handleTabChange = (tab: 'memories' | 'achievements') => {

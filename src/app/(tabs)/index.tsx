@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Animated,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,16 +29,45 @@ export default function DiscoverScreen() {
   const { profile } = useAuthStore();
   const { parties, fetchParties, isLoading } = usePartyStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'happening' | 'upcoming' | 'tonight'>('all');
 
   useEffect(() => {
-    fetchParties({ status: 'upcoming' });
-  }, []);
+    loadParties();
+  }, [selectedFilter, searchQuery]);
+
+  const loadParties = async () => {
+    const filters: any = {};
+
+    if (selectedFilter === 'happening') {
+      filters.status = 'happening';
+    } else if (selectedFilter === 'upcoming') {
+      filters.status = 'upcoming';
+    } else if (selectedFilter === 'tonight') {
+      // Tonight filter would require date filtering - keeping simple for now
+      filters.status = 'upcoming';
+    }
+
+    await fetchParties(filters);
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchParties({ status: 'upcoming' });
+    await loadParties();
     setRefreshing(false);
   };
+
+  // Filter parties based on search query
+  const filteredParties = parties.filter((party) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      party.name?.toLowerCase().includes(query) ||
+      party.location_name?.toLowerCase().includes(query) ||
+      party.description?.toLowerCase().includes(query) ||
+      party.host?.display_name?.toLowerCase().includes(query)
+    );
+  });
 
   // Mock nearby parties matching screenshot exactly
   const nearbyParties = [
@@ -67,6 +97,13 @@ export default function DiscoverScreen() {
     },
   ];
 
+  const filters = [
+    { id: 'all', label: 'All Parties', icon: 'grid' },
+    { id: 'happening', label: 'Live Now', icon: 'radio' },
+    { id: 'tonight', label: 'Tonight', icon: 'moon' },
+    { id: 'upcoming', label: 'Upcoming', icon: 'calendar' },
+  ] as const;
+
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -85,6 +122,73 @@ export default function DiscoverScreen() {
             <Ionicons name="sparkles" size={24} color={Colors.primary} />
           </TouchableOpacity>
         </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={Colors.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search parties, locations, hosts..."
+              placeholderTextColor={Colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery('');
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              >
+                <Ionicons name="close-circle" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContainer}
+          style={styles.filtersScroll}
+        >
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              onPress={() => {
+                setSelectedFilter(filter.id);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              style={[
+                styles.filterChip,
+                selectedFilter === filter.id && styles.filterChipActive,
+              ]}
+            >
+              <Ionicons
+                name={filter.icon as any}
+                size={16}
+                color={selectedFilter === filter.id ? Colors.white : Colors.text.secondary}
+              />
+              <Text
+                variant="caption"
+                weight="semibold"
+                color={selectedFilter === filter.id ? 'white' : 'secondary'}
+                style={styles.filterLabel}
+              >
+                {filter.label}
+              </Text>
+              {selectedFilter === filter.id && (
+                <LinearGradient
+                  colors={Gradients.primary}
+                  style={styles.filterChipGradient}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         <ScrollView
           style={styles.scrollView}
@@ -175,11 +279,19 @@ export default function DiscoverScreen() {
             <View style={styles.sectionHeader}>
               <Ionicons name="flame" size={20} color={Colors.accent.orange} />
               <Text variant="body" weight="semibold" style={styles.sectionTitle}>
-                Trending Now
+                {searchQuery ? `Search Results (${filteredParties.length})` : 'Trending Now'}
               </Text>
             </View>
 
-            {parties.slice(0, 3).map((party) => (
+            {filteredParties.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search" size={48} color={Colors.text.tertiary} />
+                <Text variant="body" color="secondary" center style={styles.emptyText}>
+                  {searchQuery ? 'No parties found matching your search' : 'No parties available'}
+                </Text>
+              </View>
+            ) : (
+              filteredParties.slice(0, 5).map((party) => (
               <TouchableOpacity
                 key={party.id}
                 onPress={() => router.push(`/party/${party.id}`)}
@@ -226,11 +338,12 @@ export default function DiscoverScreen() {
                   </View>
                 </Card>
               </TouchableOpacity>
-            ))}
+              ))
+            )}
           </View>
 
-          {/* Empty state if no parties */}
-          {parties.length === 0 && !isLoading && (
+          {/* Empty state if no parties - removed duplicate */}
+          {false && parties.length === 0 && !isLoading && (
             <View style={styles.emptyState}>
               <Text variant="h1" style={styles.emptyEmoji}>
                 🎭
@@ -281,6 +394,60 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  searchInput: {
+    flex: 1,
+    color: Colors.white,
+    fontSize: 15,
+    paddingVertical: Spacing.xs,
+  },
+  filtersScroll: {
+    marginBottom: Spacing.md,
+  },
+  filtersContainer: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius['2xl'],
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+  },
+  filterChipActive: {
+    borderColor: Colors.primary,
+  },
+  filterChipGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.15,
+  },
+  filterLabel: {
+    fontSize: 13,
   },
   scrollView: {
     flex: 1,
@@ -429,5 +596,9 @@ const styles = StyleSheet.create({
   },
   emptyAction: {
     padding: Spacing.base,
+  },
+  emptyText: {
+    marginTop: Spacing.md,
+    maxWidth: 250,
   },
 });

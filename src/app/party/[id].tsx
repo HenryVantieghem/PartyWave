@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,6 +37,7 @@ export default function PartyDetailScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [showAttendeesModal, setShowAttendeesModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -305,7 +308,13 @@ export default function PartyDetailScreen() {
                 </View>
               ))}
               {attendees.length > 8 && (
-                <TouchableOpacity style={styles.viewAllButton}>
+                <TouchableOpacity
+                  style={styles.viewAllButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowAttendeesModal(true);
+                  }}
+                >
                   <Text variant="body" weight="semibold" color="primary">
                     View All {attendees.length} Attendees
                   </Text>
@@ -353,6 +362,99 @@ export default function PartyDetailScreen() {
           )}
         </SafeAreaView>
       </View>
+
+      {/* Attendees Modal */}
+      <Modal
+        visible={showAttendeesModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAttendeesModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <LinearGradient
+            colors={[Colors.black, Colors.backgroundElevated]}
+            style={styles.modalGradient}
+          >
+            <SafeAreaView style={styles.modalSafeArea}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <Text variant="h3" weight="bold">
+                  All Attendees ({attendees.length})
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowAttendeesModal(false);
+                  }}
+                  style={styles.modalCloseButton}
+                >
+                  <Ionicons name="close" size={28} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Attendees List */}
+              <FlatList
+                data={attendees}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.modalContent}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item: attendee }) => (
+                  <Card variant="liquid" style={styles.modalAttendeeCard}>
+                    <View style={styles.modalAttendeeContent}>
+                      <Avatar
+                        source={{ uri: attendee.user?.avatar_url }}
+                        name={attendee.user?.display_name}
+                        size="md"
+                        online={attendee.status === 'checked_in'}
+                      />
+                      <View style={styles.modalAttendeeInfo}>
+                        <View style={styles.modalAttendeeNameRow}>
+                          <Text variant="body" weight="semibold">
+                            {attendee.user?.display_name}
+                          </Text>
+                          {currentParty?.host_id === attendee.user_id && (
+                            <View style={styles.hostBadge}>
+                              <Text variant="caption" weight="bold" color="white">
+                                HOST
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text variant="caption" color="secondary">
+                          @{attendee.user?.username}
+                        </Text>
+                        {attendee.status === 'checked_in' && attendee.checked_in_at && (
+                          <View style={styles.checkedInBadge}>
+                            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+                            <Text variant="caption" weight="semibold" color="success">
+                              Checked In
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      {attendee.status === 'checked_in' && (
+                        <View style={styles.modalLiveIndicator}>
+                          <Text variant="caption" weight="semibold" color="success">
+                            Here
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </Card>
+                )}
+                ListEmptyComponent={
+                  <View style={styles.emptyState}>
+                    <Ionicons name="people-outline" size={48} color={Colors.text.tertiary} />
+                    <Text variant="body" color="secondary" center style={styles.emptyText}>
+                      No attendees yet
+                    </Text>
+                  </View>
+                }
+              />
+            </SafeAreaView>
+          </LinearGradient>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -589,6 +691,25 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border.dark,
     marginTop: Spacing.sm,
   },
+  hostBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xxs,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+  },
+  modalLiveIndicator: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xxs,
+    backgroundColor: Colors.success + '20',
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.success,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing['3xl'],
+    gap: Spacing.md,
+  },
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
@@ -605,5 +726,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.base,
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+  },
+  modalGradient: {
+    flex: 1,
+  },
+  modalSafeArea: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.dark,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContent: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing['4xl'],
+  },
+  modalAttendeeCard: {
+    marginBottom: Spacing.md,
+  },
+  modalAttendeeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  modalAttendeeInfo: {
+    flex: 1,
+    gap: Spacing.xxs,
+  },
+  modalAttendeeNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  emptyText: {
+    marginTop: Spacing.md,
   },
 });

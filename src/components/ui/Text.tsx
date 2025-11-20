@@ -5,7 +5,7 @@ import { Typography } from '@/constants/theme';
 
 type TextVariant = 'h1' | 'h2' | 'h3' | 'h4' | 'body' | 'caption' | 'label' | 'button';
 type TextWeight = 'light' | 'regular' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black';
-type TextColor = 'primary' | 'secondary' | 'tertiary' | 'disabled' | 'inverse' | 'white' | 'accent' | 'success';
+type TextColor = 'primary' | 'secondary' | 'tertiary' | 'disabled' | 'inverse' | 'white' | 'accent' | 'success' | 'error' | 'warning';
 
 interface TextProps {
   variant?: TextVariant;
@@ -116,6 +116,8 @@ const styles = StyleSheet.create({
   color_white: { color: Colors.white },
   color_accent: { color: Colors.primary },
   color_success: { color: Colors.success },
+  color_error: { color: Colors.error },
+  color_warning: { color: Colors.warning },
 
   // Modifiers
   center: {

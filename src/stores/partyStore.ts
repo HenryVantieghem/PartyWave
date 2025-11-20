@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import { supabase, Party, PartyAttendee, PartyMemory, PartyMessage } from '@/lib/supabase';
+import {
+  supabase,
+  Party,
+  PartyAttendee,
+  PartyMemory,
+  PartyMessage,
+  uploadFileFromUri,
+  getPublicUrl,
+} from '@/lib/supabase';
 
 type PartyState = {
   // State
@@ -28,6 +36,13 @@ type PartyState = {
   fetchAttendees: (partyId: string) => Promise<void>;
   fetchMemories: (partyId: string) => Promise<void>;
   addMemory: (memory: Partial<PartyMemory>) => Promise<void>;
+  uploadMemory: (
+    imageUri: string,
+    userId: string,
+    partyId?: string,
+    caption?: string,
+    isStory?: boolean
+  ) => Promise<PartyMemory>;
   fetchMessages: (partyId: string) => Promise<void>;
   sendMessage: (message: Partial<PartyMessage>) => Promise<void>;
   subscribeToParty: (partyId: string) => () => void;
@@ -357,6 +372,51 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       if (error) throw error;
 
       set({ memories: [data, ...get().memories] });
+    } catch (error: any) {
+      set({ error: error.message });
+      throw error;
+    }
+  },
+
+  // Upload memory with image
+  uploadMemory: async (imageUri, userId, partyId, caption, isStory = false) => {
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `${userId}/${timestamp}.jpg`;
+      const bucket = isStory ? 'stories' : 'party-memories';
+
+      // Upload image to Supabase Storage
+      await uploadFileFromUri(bucket, filename, imageUri, 'image/jpeg');
+
+      // Get public URL
+      const mediaUrl = getPublicUrl(bucket, filename);
+
+      // Create memory record in database
+      const { data, error } = await supabase
+        .from('party_memories')
+        .insert({
+          user_id: userId,
+          party_id: partyId || null,
+          media_url: mediaUrl,
+          media_type: 'photo',
+          caption: caption || null,
+          is_story: isStory,
+        })
+        .select(`
+          *,
+          user:profiles(*)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Add to memories list if it's not a story
+      if (!isStory && data) {
+        set({ memories: [data, ...get().memories] });
+      }
+
+      return data;
     } catch (error: any) {
       set({ error: error.message });
       throw error;
