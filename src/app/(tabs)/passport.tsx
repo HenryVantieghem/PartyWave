@@ -36,13 +36,13 @@ export default function PassportScreen() {
   const stats = [
     {
       icon: 'calendar',
-      value: profile?.total_parties_hosted || 0,
+      value: profile?.total_parties_hosted || 12,
       label: 'Parties Hosted',
       color: Colors.primary,
     },
     {
       icon: 'people',
-      value: profile?.total_parties_attended || 0,
+      value: profile?.total_parties_attended || 47,
       label: 'Parties Attended',
       color: Colors.secondary,
     },
@@ -62,13 +62,13 @@ export default function PassportScreen() {
       icon: 'camera',
       value: 324,
       label: 'Photos Shared',
-      color: Colors.accent.blue,
+      color: Colors.accent.orange,
     },
     {
       icon: 'star',
-      value: '🎉',
+      value: '🎂',
       label: 'Favorite Vibe',
-      color: Colors.accent.orange,
+      color: Colors.accent.gold,
     },
   ];
 
@@ -77,16 +77,18 @@ export default function PassportScreen() {
     {
       id: '1',
       image: null,
-      title: 'Sunday 26 • Playlist',
+      title: 'Scrubb 21st Birthday',
       badge: 'Guest',
       badgeColor: Colors.secondary,
+      emoji: '🎂',
     },
     {
       id: '2',
       image: null,
-      title: 'Happy Weekend Party',
+      title: 'House Warming Party',
       badge: 'Host',
       badgeColor: Colors.primary,
+      emoji: '🏠',
     },
   ];
 
@@ -104,28 +106,28 @@ export default function PassportScreen() {
               Party Resume
             </Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-              <Ionicons name="settings-outline" size={24} color={Colors.text.secondary} />
+              <Avatar source={profile?.avatar_url} name={profile?.display_name} size="sm" />
             </TouchableOpacity>
           </View>
 
-          {/* Profile Card */}
-          <Card variant="glass" style={styles.profileCard}>
+          {/* Profile Section */}
+          <View style={styles.profileSection}>
             <Avatar
               source={profile?.avatar_url}
               name={profile?.display_name}
-              size="xl"
+              size="2xl"
               gradient
               style={styles.avatar}
             />
 
-            <Text variant="h3" weight="bold" center style={styles.displayName}>
-              {profile?.display_name || 'Party Legend'}
+            <Text variant="h2" weight="bold" center style={styles.displayName}>
+              {profile?.display_name || 'Alex Chen'}
             </Text>
 
             <Text variant="body" center color="secondary" style={styles.bio}>
-              {profile?.bio || 'Party enthusiast · Social connector · Memory maker'}
+              {profile?.bio || 'Party enthusiast • Social connector • Memory maker'}
             </Text>
-          </Card>
+          </View>
 
           {/* Stats Grid */}
           <View style={styles.statsGrid}>
@@ -186,7 +188,11 @@ export default function PassportScreen() {
                 Recent Party Memories
               </Text>
 
-              <View style={styles.memoriesGrid}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.memoriesScroll}
+              >
                 {memories.map((memory) => (
                   <TouchableOpacity
                     key={memory.id}
@@ -197,27 +203,26 @@ export default function PassportScreen() {
                       colors={['rgba(26, 26, 26, 0.9)', 'rgba(26, 26, 26, 0.7)']}
                       style={styles.memoryGradient}
                     >
-                      <Text variant="h1" style={styles.memoryPlaceholder}>
-                        🎉
-                      </Text>
+                      <View style={styles.memoryTop}>
+                        <Text variant="h2" style={styles.memoryEmoji}>
+                          {memory.emoji}
+                        </Text>
+                        <View style={[styles.memoryBadge, { backgroundColor: memory.badgeColor }]}>
+                          <Text variant="label" color="white" style={styles.memoryBadgeText}>
+                            {memory.badge}
+                          </Text>
+                        </View>
+                      </View>
                     </LinearGradient>
 
-                    <View style={styles.memoryInfo}>
-                      <View style={[styles.memoryBadge, { backgroundColor: memory.badgeColor }]}>
-                        <Text variant="label" color="white" style={styles.memoryBadgeText}>
-                          {memory.badge}
-                        </Text>
-                      </View>
-                    </View>
-
                     <View style={styles.memoryTitle}>
-                      <Text variant="caption" weight="medium" numberOfLines={2}>
+                      <Text variant="caption" weight="medium" numberOfLines={2} color="white">
                         {memory.title}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           ) : (
             <View style={styles.section}>
@@ -271,20 +276,22 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // Profile Card
-  profileCard: {
+  // Profile Section
+  profileSection: {
     alignItems: 'center',
-    padding: Spacing.xl,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing['3xl'],
   },
   avatar: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   displayName: {
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.md,
+    fontSize: 28,
+    lineHeight: 34,
   },
   bio: {
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // Stats Grid
@@ -340,37 +347,37 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
 
-  // Memories Grid
-  memoriesGrid: {
-    flexDirection: 'row',
-    gap: Spacing.md,
+  // Memories Scroll
+  memoriesScroll: {
+    paddingRight: Spacing.lg,
   },
   memoryCard: {
-    flex: 1,
+    width: 160,
     aspectRatio: 3 / 4,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
+    marginRight: Spacing.md,
   },
   memoryGradient: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  memoryPlaceholder: {
-    fontSize: 48,
+  memoryTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: Spacing.md,
   },
-  memoryInfo: {
-    position: 'absolute',
-    top: Spacing.md,
-    left: Spacing.md,
+  memoryEmoji: {
+    fontSize: 24,
   },
   memoryBadge: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.xs,
+    borderRadius: BorderRadius.sm,
   },
   memoryBadgeText: {
     fontSize: 10,
+    fontWeight: '600',
   },
   memoryTitle: {
     position: 'absolute',
@@ -378,7 +385,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: Spacing.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
 
   // Achievements Grid

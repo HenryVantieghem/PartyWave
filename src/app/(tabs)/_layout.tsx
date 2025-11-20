@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
-import { View, Platform } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Colors } from '@/constants/colors';
+import { Spacing, BorderRadius } from '@/constants/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function TabLayout() {
@@ -12,31 +13,63 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.text.secondary,
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: Platform.OS === 'ios' ? 'transparent' : Colors.card,
           borderTopWidth: 0,
           elevation: 0,
-          height: 85,
-          paddingBottom: 25,
+          height: Platform.OS === 'ios' ? 90 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
           paddingTop: 10,
+          paddingHorizontal: Spacing.md,
+          // Floating glass effect
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
             <BlurView
-              intensity={95}
+              intensity={100}
               tint="dark"
               style={{
                 position: 'absolute',
                 top: 0,
-                left: 0,
-                right: 0,
+                left: Spacing.md,
+                right: Spacing.md,
                 bottom: 0,
+                borderRadius: BorderRadius.xl,
+                borderWidth: 1,
+                borderColor: Colors.glass.border,
+                overflow: 'hidden',
               }}
             />
-          ) : null
+          ) : (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: Spacing.md,
+                right: Spacing.md,
+                bottom: 0,
+                backgroundColor: Colors.card,
+                borderRadius: BorderRadius.xl,
+                borderWidth: 1,
+                borderColor: Colors.border.default,
+              }}
+            />
+          )
         ),
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
+          marginTop: 2,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
       }}
     >
@@ -115,9 +148,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="crew"
         options={{
-          title: 'Messages',
+          title: 'Crew',
           tabBarIcon: ({ color, size, focused }) => (
             <View
               style={{
@@ -130,7 +163,7 @@ export default function TabLayout() {
               }}
             >
               <Ionicons
-                name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
+                name={focused ? 'people' : 'people-outline'}
                 size={size}
                 color={color}
               />

@@ -46,7 +46,7 @@ export const signUp = async ({ email, password, username, displayName }: SignUpD
 
     if (authError) throw authError;
 
-    // Create profile
+    // Create profile (only if user exists)
     if (authData.user) {
       const { error: profileError } = await supabase.from('profiles').insert({
         id: authData.user.id,
@@ -58,9 +58,14 @@ export const signUp = async ({ email, password, username, displayName }: SignUpD
         party_streak: 0,
       });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        // If profile creation fails, try to clean up the auth user
+        console.error('Profile creation error:', profileError);
+        throw profileError;
+      }
     }
 
+    // Return user and session (session might be null if email confirmation is required)
     return { user: authData.user, session: authData.session };
   } catch (error) {
     throw new Error(handleError(error));

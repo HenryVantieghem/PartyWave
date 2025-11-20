@@ -71,6 +71,10 @@ export const Input: React.FC<InputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           secureTextEntry={secure && !isSecureVisible}
+          autoCorrect={false}
+          autoCapitalize={props.autoCapitalize || 'none'}
+          textContentType={secure ? (props.textContentType || 'newPassword') : (props.textContentType || 'none')}
+          autoComplete={props.autoComplete || 'off'}
           {...props}
         />
 
@@ -92,7 +96,7 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Spacing.base,
+    marginBottom: 0,
   },
   label: {
     marginBottom: Spacing.sm,

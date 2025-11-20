@@ -65,24 +65,36 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#000000', '#0a0a0a', '#000000']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#000000', '#0a0a0a', '#000000']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
           style={styles.keyboardAvoid}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
             {/* Header */}
             <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => router.push('/(auth)/welcome')}
+                style={styles.backButton}
+              >
+                <Text variant="body" color="accent">
+                  ← Back
+                </Text>
+              </TouchableOpacity>
+
               <Text variant="h1" weight="black" center style={styles.title}>
                 THE HANGOUT
               </Text>
@@ -101,7 +113,8 @@ export default function LoginScreen() {
                 leftIcon="mail-outline"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete="email"
+                autoComplete="off"
+                textContentType="none"
                 error={errors.email}
               />
 
@@ -112,6 +125,8 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 leftIcon="lock-closed-outline"
                 secure
+                autoComplete="off"
+                textContentType="password"
                 error={errors.password}
               />
 
@@ -176,7 +191,7 @@ export default function LoginScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -193,34 +208,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing['2xl'],
+    paddingBottom: Spacing['5xl'],
   },
   header: {
-    marginBottom: Spacing['4xl'],
-    paddingTop: Spacing['2xl'],
+    marginBottom: Spacing['5xl'],
+    paddingTop: Spacing.xl,
+  },
+  backButton: {
+    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.xs,
+    alignSelf: 'flex-start',
   },
   title: {
     color: Colors.primary,
     letterSpacing: 2,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+    lineHeight: 40,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
+    lineHeight: 24,
   },
   form: {
-    gap: Spacing.base,
+    gap: Spacing.lg,
   },
   forgotPassword: {
-    marginTop: -Spacing.sm,
-    marginBottom: Spacing.base,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   loginButton: {
-    marginTop: Spacing.base,
+    marginTop: Spacing.md,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.xl,
+    marginVertical: Spacing['2xl'],
   },
   dividerLine: {
     flex: 1,
@@ -229,9 +253,11 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: Spacing.base,
+    fontSize: 12,
   },
   footer: {
     marginTop: 'auto',
-    paddingTop: Spacing['2xl'],
+    paddingTop: Spacing['3xl'],
+    paddingBottom: Spacing.lg,
   },
 });

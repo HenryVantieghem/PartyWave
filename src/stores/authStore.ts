@@ -18,7 +18,7 @@ type AuthState = {
     password: string;
     username: string;
     displayName: string;
-  }) => Promise<void>;
+  }) => Promise<{ user: User | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   loadSession: () => Promise<void>;
@@ -46,12 +46,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         user,
         session,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!session, // Only authenticated if both user and session exist
         isLoading: false,
       });
-      if (user) {
+      if (user && session) {
         await get().loadProfile();
       }
+      return { user, session };
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       throw error;

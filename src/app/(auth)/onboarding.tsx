@@ -6,6 +6,7 @@ import {
   FlatList,
   Image,
   Animated,
+  Text as RNText,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -66,34 +67,36 @@ export default function OnboardingScreen() {
         animated: true,
       });
     } else {
-      router.replace('/(auth)/signup');
+      router.replace('/(auth)/welcome');
     }
   };
 
   const skip = () => {
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/welcome');
   };
 
   const renderSlide = ({ item }: { item: typeof slides[0] }) => (
     <View style={styles.slide}>
-      <LinearGradient
-        colors={item.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.emojiContainer}
-      >
-        <Text variant="h1" style={styles.emoji}>
-          {item.emoji}
-        </Text>
-      </LinearGradient>
+      <View style={styles.content}>
+        <LinearGradient
+          colors={item.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.emojiContainer}
+        >
+          <RNText style={styles.emoji} allowFontScaling={false}>
+            {item.emoji}
+          </RNText>
+        </LinearGradient>
 
-      <View style={styles.textContainer}>
-        <Text variant="h2" center weight="black" style={styles.title}>
-          {item.title}
-        </Text>
-        <Text variant="body" center color="secondary" style={styles.description}>
-          {item.description}
-        </Text>
+        <View style={styles.textContainer}>
+          <Text variant="h2" center weight="black" style={styles.title}>
+            {item.title}
+          </Text>
+          <Text variant="body" center color="secondary" style={styles.description}>
+            {item.description}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -183,7 +186,7 @@ export default function OnboardingScreen() {
             </Button>
 
             <Button onPress={skip} variant="ghost" size="medium" fullWidth>
-              {currentIndex === slides.length - 1 ? 'Sign In Instead' : 'Skip'}
+              {currentIndex === slides.length - 1 ? 'Sign In' : 'Skip'}
             </Button>
           </View>
         </View>
@@ -200,7 +203,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
     alignItems: 'center',
   },
   logo: {
@@ -209,40 +214,57 @@ const styles = StyleSheet.create({
   },
   slide: {
     width,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing['2xl'],
   },
-  emojiContainer: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+  content: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing['4xl'],
+    width: '100%',
+  },
+  emojiContainer: {
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing['5xl'],
+    overflow: 'hidden',
   },
   emoji: {
-    fontSize: 80,
+    fontSize: 140,
+    lineHeight: 140,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   textContainer: {
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.base,
+    width: '100%',
   },
   title: {
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.lg,
+    lineHeight: 36,
   },
   description: {
     maxWidth: 320,
+    lineHeight: 24,
+    fontSize: 16,
   },
   footer: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing['2xl'],
+    paddingTop: Spacing.lg,
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing['2xl'],
+    height: 12,
   },
   dot: {
     height: 8,
@@ -251,6 +273,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   buttons: {
-    gap: Spacing.md,
+    gap: Spacing.base,
   },
 });

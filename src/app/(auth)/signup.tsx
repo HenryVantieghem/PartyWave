@@ -87,41 +87,61 @@ export default function SignupScreen() {
     }
 
     try {
-      await signUp({
+      const result = await signUp({
         email: formData.email,
         password: formData.password,
         username: formData.username,
         displayName: formData.displayName,
       });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast('Account created! Welcome to the party!', 'success');
+      
+      // Wait a bit for auth store to update
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Check if user is authenticated (session exists)
+      const { isAuthenticated } = useAuthStore.getState();
+      
+      if (isAuthenticated && result.session) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showToast('Account created! Welcome to the party!', 'success');
+        router.replace('/(tabs)');
+      } else {
+        // Email confirmation might be required
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showToast('Account created! Please check your email to confirm your account.', 'success');
+        router.replace('/(auth)/login');
+      }
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast(error.message || 'Signup failed', 'error');
+      const errorMessage = error.message || 'Signup failed. Please try again.';
+      showToast(errorMessage, 'error');
+      console.error('Signup error:', error);
     }
   };
 
   return (
-    <LinearGradient
-      colors={['#000000', '#0a0a0a', '#000000']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#000000', '#0a0a0a', '#000000']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
           style={styles.keyboardAvoid}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
-                onPress={() => router.back()}
+                onPress={() => router.push('/(auth)/welcome')}
                 style={styles.backButton}
               >
                 <Text variant="body" color="accent">
@@ -147,7 +167,8 @@ export default function SignupScreen() {
                 leftIcon="mail-outline"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete="email"
+                autoComplete="off"
+                textContentType="none"
                 error={errors.email}
               />
 
@@ -158,7 +179,8 @@ export default function SignupScreen() {
                 onChangeText={(value) => updateField('username', value)}
                 leftIcon="at-outline"
                 autoCapitalize="none"
-                autoComplete="username"
+                autoComplete="off"
+                textContentType="none"
                 error={errors.username}
               />
 
@@ -168,7 +190,8 @@ export default function SignupScreen() {
                 value={formData.displayName}
                 onChangeText={(value) => updateField('displayName', value)}
                 leftIcon="person-outline"
-                autoComplete="name"
+                autoComplete="off"
+                textContentType="none"
                 error={errors.displayName}
               />
 
@@ -179,6 +202,8 @@ export default function SignupScreen() {
                 onChangeText={(value) => updateField('password', value)}
                 leftIcon="lock-closed-outline"
                 secure
+                autoComplete="off"
+                textContentType="newPassword"
                 error={errors.password}
               />
 
@@ -189,6 +214,8 @@ export default function SignupScreen() {
                 onChangeText={(value) => updateField('confirmPassword', value)}
                 leftIcon="lock-closed-outline"
                 secure
+                autoComplete="off"
+                textContentType="newPassword"
                 error={errors.confirmPassword}
               />
 
@@ -223,7 +250,7 @@ export default function SignupScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -240,35 +267,41 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing['2xl'],
+    paddingBottom: Spacing['5xl'],
   },
   header: {
-    marginBottom: Spacing['3xl'],
-    paddingTop: Spacing.lg,
+    marginBottom: Spacing['4xl'],
+    paddingTop: Spacing.xl,
   },
   backButton: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.xs,
   },
   title: {
     color: Colors.primary,
     letterSpacing: 1,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+    lineHeight: 40,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 17,
+    lineHeight: 24,
   },
   form: {
-    gap: Spacing.base,
+    gap: Spacing.lg,
   },
   signupButton: {
-    marginTop: Spacing.lg,
+    marginTop: Spacing.base,
   },
   terms: {
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    lineHeight: 18,
   },
   footer: {
     marginTop: 'auto',
-    paddingTop: Spacing['2xl'],
+    paddingTop: Spacing['3xl'],
+    paddingBottom: Spacing.lg,
   },
 });
