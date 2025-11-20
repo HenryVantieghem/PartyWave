@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -49,7 +50,6 @@ export default function ProfileScreen() {
     setIsLoadingAchievements(true);
     
     try {
-      // Fetch user's memories from all parties they attended
       await fetchUserMemories();
       await fetchAchievements(profile.id);
       await fetchConnections(profile.id);
@@ -128,55 +128,56 @@ export default function ProfileScreen() {
     { icon: 'help-circle-outline', label: 'Help & Support', route: '/help', color: Colors.secondary },
   ];
 
-  // Calculate stats from real data
+  // Get connections count
   const userConnections = useUserStore.getState().connections;
   
+  // Stats matching screenshot exactly - 3x2 grid
   const stats = [
     {
-      icon: 'calendar',
+      icon: 'calendar-outline',
       value: profile?.total_parties_hosted || 0,
       label: 'Parties Hosted',
       color: Colors.primary,
     },
     {
-      icon: 'people',
+      icon: 'people-outline',
       value: profile?.total_parties_attended || 0,
       label: 'Parties Attended',
-      color: Colors.secondary,
+      color: Colors.primary,
     },
     {
-      icon: 'heart',
+      icon: 'heart-outline',
       value: userConnections.length || 0,
       label: 'Friends Made',
-      color: Colors.accent.purple,
+      color: Colors.primary,
     },
     {
-      icon: 'trophy',
+      icon: 'trophy-outline',
       value: achievements.filter((a: any) => a.achievement_type === 'mvp').length || 0,
       label: 'Party MVP',
       color: Colors.accent.gold,
     },
     {
-      icon: 'camera',
+      icon: 'camera-outline',
       value: userMemories.length || 0,
       label: 'Photos Shared',
-      color: Colors.accent.orange,
+      color: Colors.accent.gold,
     },
     {
       icon: 'star',
-      value: '🎉',
+      value: '🎂',
       label: 'Favorite Vibe',
       color: Colors.accent.gold,
     },
   ];
 
-  // Format memories for display
+  // Format memories for display matching screenshot
   const formattedMemories = userMemories.slice(0, 10).map((memory: any) => ({
     id: memory.id,
     title: memory.party?.name || 'Party Memory',
     badge: memory.party?.host_id === profile?.id ? 'Host' : 'Guest',
     badgeColor: memory.party?.host_id === profile?.id ? Colors.primary : Colors.secondary,
-    emoji: memory.media_type === 'video' ? '🎥' : '📸',
+    emoji: memory.party?.name?.includes('Birthday') ? '🎂' : memory.party?.name?.includes('House') ? '🏠' : '🎉',
     image: memory.media_url,
     partyId: memory.party?.id,
   }));
@@ -202,9 +203,12 @@ export default function ProfileScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text variant="h2" weight="black" style={styles.headerTitle}>
-              Profile
+            <Text variant="h2" weight="black" center style={styles.headerTitle}>
+              Party Resume
             </Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+              <Avatar source={profile?.avatar_url} name={profile?.display_name} size="sm" />
+            </TouchableOpacity>
           </View>
 
           {/* Profile Section */}
@@ -226,13 +230,13 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
-          {/* Stats Grid */}
+          {/* Stats Grid - 3x2 matching screenshot */}
           <View style={styles.statsGrid}>
             {stats.map((stat, index) => (
               <Card key={index} variant="liquid" style={styles.statCard}>
                 <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
                   {typeof stat.value === 'string' ? (
-                    <Text variant="h3">{stat.value}</Text>
+                    <Text variant="h3" style={styles.statEmoji}>{stat.value}</Text>
                   ) : (
                     <Ionicons name={stat.icon as any} size={24} color={stat.color} />
                   )}
@@ -321,36 +325,34 @@ export default function ProfileScreen() {
                       style={styles.memoryCard}
                       onPress={() => handleMemoryPress(memory)}
                     >
+                      {memory.image ? (
+                        <Image source={{ uri: memory.image }} style={styles.memoryImage} />
+                      ) : (
+                        <LinearGradient
+                          colors={['rgba(26, 26, 26, 0.9)', 'rgba(26, 26, 26, 0.7)']}
+                          style={styles.memoryGradient}
+                        />
+                      )}
                       <LinearGradient
-                        colors={['rgba(26, 26, 26, 0.9)', 'rgba(26, 26, 26, 0.7)']}
-                        style={styles.memoryGradient}
+                        colors={['transparent', 'rgba(0, 0, 0, 0.8)']}
+                        style={styles.memoryOverlay}
                       >
-                        {memory.image ? (
-                          <View style={styles.memoryImageContainer}>
-                            {/* Image would be rendered here */}
-                            <Text variant="h2" style={styles.memoryEmoji}>
-                              {memory.emoji}
+                        <View style={styles.memoryTop}>
+                          <Text variant="h3" style={styles.memoryEmoji}>
+                            {memory.emoji}
+                          </Text>
+                          <View style={[styles.memoryBadge, { backgroundColor: memory.badgeColor }]}>
+                            <Text variant="label" color="white" style={styles.memoryBadgeText}>
+                              {memory.badge}
                             </Text>
                           </View>
-                        ) : (
-                          <View style={styles.memoryTop}>
-                            <Text variant="h2" style={styles.memoryEmoji}>
-                              {memory.emoji}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={[styles.memoryBadge, { backgroundColor: memory.badgeColor }]}>
-                          <Text variant="label" color="white" style={styles.memoryBadgeText}>
-                            {memory.badge}
+                        </View>
+                        <View style={styles.memoryTitle}>
+                          <Text variant="caption" weight="medium" numberOfLines={2} color="white">
+                            {memory.title}
                           </Text>
                         </View>
                       </LinearGradient>
-
-                      <View style={styles.memoryTitle}>
-                        <Text variant="caption" weight="medium" numberOfLines={2} color="white">
-                          {memory.title}
-                        </Text>
-                      </View>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -443,6 +445,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.base,
     marginBottom: Spacing.lg,
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
     color: Colors.primary,
   },
@@ -465,6 +471,7 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: 15,
     lineHeight: 22,
+    maxWidth: 300,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -485,11 +492,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.sm,
   },
+  statEmoji: {
+    fontSize: 24,
+  },
   statValue: {
     marginBottom: Spacing.xxs,
   },
   statLabel: {
     fontSize: 11,
+    lineHeight: 14,
   },
   tabsCard: {
     marginBottom: Spacing.xl,
@@ -522,29 +533,31 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
     marginRight: Spacing.md,
+    backgroundColor: Colors.card,
+  },
+  memoryImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   memoryGradient: {
-    flex: 1,
-    position: 'relative',
+    width: '100%',
+    height: '100%',
   },
-  memoryImageContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  memoryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+    padding: Spacing.md,
   },
   memoryTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: Spacing.md,
   },
   memoryEmoji: {
     fontSize: 24,
   },
   memoryBadge: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
@@ -554,12 +567,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   memoryTitle: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: Spacing.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingTop: Spacing.sm,
   },
   achievementsGrid: {
     flexDirection: 'row',

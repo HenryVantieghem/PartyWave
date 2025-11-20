@@ -84,10 +84,10 @@ export default function TabLayout() {
                   colors={[Colors.primary + '30', Colors.primary + '10']}
                   style={styles.iconGradient}
                 >
-                  <Text style={styles.emojiIcon}>⚡</Text>
+                  <Ionicons name="compass" size={24} color={Colors.primary} />
                 </LinearGradient>
               ) : (
-                <Text style={styles.emojiIconInactive}>⚡</Text>
+                <Ionicons name="compass-outline" size={24} color={Colors.text.secondary} />
               )}
             </View>
           ),
@@ -104,10 +104,10 @@ export default function TabLayout() {
                   colors={[Colors.primary + '30', Colors.primary + '10']}
                   style={styles.iconGradient}
                 >
-                  <Text style={styles.emojiIcon}>📅</Text>
+                  <Ionicons name="calendar" size={24} color={Colors.primary} />
                 </LinearGradient>
               ) : (
-                <Text style={styles.emojiIconInactive}>📅</Text>
+                <Ionicons name="calendar-outline" size={24} color={Colors.text.secondary} />
               )}
             </View>
           ),
@@ -123,7 +123,7 @@ export default function TabLayout() {
                 colors={focused ? Gradients.primary : ['#4ECDC4', '#95E1D3']}
                 style={styles.cameraButton}
               >
-                <Text style={styles.cameraEmoji}>📸</Text>
+                <Ionicons name="add" size={32} color={Colors.white} />
               </LinearGradient>
             </View>
           ),
@@ -140,10 +140,10 @@ export default function TabLayout() {
                   colors={[Colors.primary + '30', Colors.primary + '10']}
                   style={styles.iconGradient}
                 >
-                  <Text style={styles.emojiIcon}>👥</Text>
+                  <Ionicons name="people" size={24} color={Colors.primary} />
                 </LinearGradient>
               ) : (
-                <Text style={styles.emojiIconInactive}>👥</Text>
+                <Ionicons name="people-outline" size={24} color={Colors.text.secondary} />
               )}
             </View>
           ),
@@ -160,10 +160,10 @@ export default function TabLayout() {
                   colors={[Colors.primary + '30', Colors.primary + '10']}
                   style={styles.iconGradient}
                 >
-                  <Text style={styles.emojiIcon}>👤</Text>
+                  <Ionicons name="person" size={24} color={Colors.primary} />
                 </LinearGradient>
               ) : (
-                <Text style={styles.emojiIconInactive}>👤</Text>
+                <Ionicons name="person-outline" size={24} color={Colors.text.secondary} />
               )}
             </View>
           ),
@@ -189,17 +189,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary + '40',
   },
-  emojiIcon: {
-    fontSize: 24,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  emojiIconInactive: {
-    fontSize: 24,
-    opacity: 0.6,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
   cameraContainer: {
     width: 64,
     height: 64,
@@ -220,10 +209,5 @@ const styles = StyleSheet.create({
     elevation: 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  cameraEmoji: {
-    fontSize: 28,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
   },
 });

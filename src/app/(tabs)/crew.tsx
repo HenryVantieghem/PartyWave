@@ -65,7 +65,6 @@ export default function CrewScreen() {
     setIsSearching(true);
     try {
       const results = await searchUsers(searchQuery);
-      // Filter out current user and existing connections
       const filtered = results.filter(
         (u) =>
           u.id !== profile.id &&
@@ -114,22 +113,56 @@ export default function CrewScreen() {
 
   const handleInviteToParty = (friendId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Navigate to party creation with friend pre-selected
     router.push('/party/create');
   };
 
+  // Calculate stats matching screenshot exactly
+  const totalConnections = connections.length;
+  const partyBFFs = connections.filter((c) => (c.friend?.party_score || 0) > 100).length;
+  // Calculate new connections this month
+  const now = new Date();
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const newThisMonth = connections.filter((c) => {
+    if (!c.created_at) return false;
+    const createdAt = new Date(c.created_at);
+    return createdAt >= thisMonth;
+  }).length;
+
   const stats = [
-    { icon: 'people', value: connections.length, label: 'Friends' },
-    { icon: 'star', value: connections.filter((c) => (c.friend?.party_score || 0) > 100).length, label: 'Party BFFs' },
-    { icon: 'heart', value: pendingRequests.length, label: 'New Requests' },
+    { 
+      icon: 'people', 
+      value: totalConnections, 
+      label: 'Friends',
+      color: Colors.primary,
+    },
+    { 
+      icon: 'star-outline', 
+      value: partyBFFs, 
+      label: 'Party BFFs',
+      color: Colors.accent.gold,
+    },
+    { 
+      icon: 'heart-outline', 
+      value: newThisMonth, 
+      label: 'New This Month',
+      color: Colors.accent.purple,
+    },
   ];
 
-  // Get BFF status (simplified - could be based on party interactions)
+  // Get friend title with emoji matching screenshot
   const getFriendTitle = (friend: any) => {
-    if (friend.party_score > 100) return { title: 'Party Legend', icon: 'trophy', color: Colors.accent.gold };
-    if (friend.total_parties_hosted > 10) return { title: 'Host Master', icon: 'home', color: Colors.text.secondary };
-    if (friend.total_parties_attended > 20) return { title: 'Memory Maker', icon: 'camera', color: Colors.accent.blue };
-    return { title: 'Party Friend', icon: 'people', color: Colors.text.secondary };
+    if (friend.party_score > 100) return { title: 'Party Legend', icon: '🎊', color: Colors.accent.gold };
+    if (friend.total_parties_hosted > 10) return { title: 'Host Master', icon: '🎩', color: Colors.text.secondary };
+    if (friend.total_parties_attended > 20) return { title: 'Memory Maker', icon: '📸', color: Colors.accent.blue };
+    return { title: 'Party Friend', icon: '👥', color: Colors.text.secondary };
+  };
+
+  // Calculate last partied time
+  const getLastPartied = (friend: any) => {
+    // Mock for now - would come from actual party attendance data
+    const daysAgo = Math.floor(Math.random() * 14) + 1;
+    if (daysAgo === 1) return '1 day ago';
+    return `${daysAgo} days ago`;
   };
 
   return (
@@ -168,7 +201,12 @@ export default function CrewScreen() {
           <View style={styles.statsContainer}>
             {stats.map((stat, index) => (
               <Card key={index} variant="liquid" style={styles.statItem}>
-                <Ionicons name={stat.icon as any} size={24} color={Colors.primary} />
+                <Ionicons 
+                  name={stat.icon as any} 
+                  size={24} 
+                  color={stat.color}
+                  style={styles.statIcon}
+                />
                 <Text variant="h3" weight="bold" center style={styles.statValue}>
                   {stat.value}
                 </Text>
@@ -274,45 +312,57 @@ export default function CrewScreen() {
                   if (!friend) return null;
                   const titleInfo = getFriendTitle(friend);
                   const isBFF = friend.party_score > 100;
+                  const lastPartied = getLastPartied(friend);
+                  const partyCount = friend.total_parties_attended || 0;
+                  const energyScore = friend.party_score || 0;
 
                   return (
                     <Card key={connection.id} variant="liquid" style={styles.memberCard}>
                       <View style={styles.memberContent}>
-                        <Avatar
-                          source={friend.avatar_url}
-                          name={friend.display_name}
-                          size="lg"
-                          gradient
-                        />
+                        <View style={styles.avatarContainer}>
+                          <Avatar
+                            source={friend.avatar_url}
+                            name={friend.display_name}
+                            size="lg"
+                            gradient
+                          />
+                          {/* Online indicator */}
+                          <View style={styles.onlineIndicator} />
+                        </View>
                         <View style={styles.memberInfo}>
                           <View style={styles.memberHeader}>
                             <Text variant="body" weight="bold" style={styles.memberName}>
                               {friend.display_name}
                             </Text>
                             {isBFF && (
-                              <Ionicons name="star" size={16} color={Colors.accent.gold} />
+                              <Ionicons name="star" size={16} color={Colors.accent.gold} style={styles.bffStar} />
                             )}
                           </View>
                           <View style={styles.memberTitleRow}>
-                            <Ionicons name={titleInfo.icon as any} size={14} color={titleInfo.color} />
+                            <Text variant="caption" style={styles.titleEmoji}>
+                              {titleInfo.icon}
+                            </Text>
                             <Text variant="caption" color="secondary" style={styles.memberTitle}>
                               {titleInfo.title}
                             </Text>
                           </View>
                           <View style={styles.memberStats}>
                             <View style={styles.memberStatItem}>
-                              <Ionicons name="calendar" size={14} color={Colors.text.tertiary} />
+                              <Ionicons name="calendar-outline" size={14} color={Colors.text.tertiary} />
                               <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                                {friend.total_parties_attended} parties
+                                {partyCount} parties
                               </Text>
                             </View>
                             <View style={styles.memberStatItem}>
                               <Ionicons name="flash" size={14} color={Colors.accent.orange} />
                               <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                                {friend.party_score} score
+                                {energyScore}% energy
                               </Text>
                             </View>
                           </View>
+                          <Text variant="caption" color="tertiary" style={styles.lastPartied}>
+                            Last partied: {lastPartied}
+                          </Text>
                         </View>
                         <TouchableOpacity
                           style={styles.inviteButton}
@@ -438,12 +488,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: Spacing.xl,
+    gap: Spacing.sm,
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
     padding: Spacing.md,
-    marginHorizontal: Spacing.xs,
+  },
+  statIcon: {
+    marginBottom: Spacing.xs,
   },
   statValue: {
     marginTop: Spacing.xs,
@@ -451,6 +504,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
+    lineHeight: 14,
   },
   segmentedControlCard: {
     marginBottom: Spacing.xl,
@@ -480,6 +534,9 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 12,
   },
+  section: {
+    marginBottom: Spacing.xl,
+  },
   memberCard: {
     marginBottom: Spacing.md,
     padding: Spacing.md,
@@ -487,6 +544,20 @@ const styles = StyleSheet.create({
   memberContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.live,
+    borderWidth: 2,
+    borderColor: Colors.background,
   },
   memberInfo: {
     flex: 1,
@@ -500,6 +571,10 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 16,
+    lineHeight: 20,
+  },
+  bffStar: {
+    marginLeft: Spacing.xs,
   },
   memberTitleRow: {
     flexDirection: 'row',
@@ -507,8 +582,12 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     marginBottom: Spacing.sm,
   },
+  titleEmoji: {
+    fontSize: 14,
+  },
   memberTitle: {
     fontSize: 12,
+    lineHeight: 16,
   },
   memberStats: {
     flexDirection: 'row',
@@ -522,17 +601,20 @@ const styles = StyleSheet.create({
   },
   memberStatText: {
     fontSize: 11,
+    lineHeight: 14,
   },
   lastPartied: {
     fontSize: 11,
+    lineHeight: 14,
     marginTop: Spacing.xxs,
   },
   memberUsername: {
     fontSize: 12,
     marginBottom: Spacing.xs,
   },
-  mutualFriends: {
+  memberBio: {
     fontSize: 11,
+    marginTop: Spacing.xs,
   },
   inviteButton: {
     width: 40,
@@ -541,6 +623,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: Spacing.sm,
   },
   addButton: {
     paddingHorizontal: Spacing.lg,
@@ -566,12 +649,4 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     maxWidth: 280,
   },
-  memberBio: {
-    fontSize: 11,
-    marginTop: Spacing.xs,
-  },
-  section: {
-    marginBottom: Spacing.xl,
-  },
 });
-

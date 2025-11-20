@@ -38,7 +38,7 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   };
 
-  // Mock nearby parties for proximity circles
+  // Mock nearby parties matching screenshot exactly
   const nearbyParties = [
     { id: '1', name: 'Beach Bonfire\nHangout', distance: '0.4 mi', attendees: 7, emoji: '🔥' },
     { id: '2', name: 'Friday Night\nGame Night', distance: '1.9 mi', attendees: 10, emoji: '🏠' },
@@ -71,17 +71,17 @@ export default function DiscoverScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text variant="h2" weight="black" style={styles.headerTitle}>
               Party Radar
             </Text>
-            <Text variant="caption" color="secondary">
+            <Text variant="caption" color="secondary" style={styles.headerSubtitle}>
               Discover live parties near you
             </Text>
           </View>
 
           <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-            <Avatar source={profile?.avatar_url} name={profile?.display_name} size="md" online />
+            <Ionicons name="sparkles" size={24} color={Colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -130,7 +130,7 @@ export default function DiscoverScreen() {
                       <Text variant="body" weight="bold" center style={styles.proximityName}>
                         {party.name}
                       </Text>
-                      <Text variant="caption" color="secondary" center>
+                      <Text variant="caption" color="secondary" center style={styles.proximityAttendees}>
                         {party.attendees} going
                       </Text>
                       <Text variant="caption" color="tertiary" center style={styles.proximityDistance}>
@@ -271,8 +271,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.base,
   },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
     color: Colors.primary,
+    marginBottom: Spacing.xxs,
+  },
+  headerSubtitle: {
+    fontSize: 12,
   },
   scrollView: {
     flex: 1,
@@ -294,7 +301,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Proximity Circles
+  // Proximity Circles - Perfect circles matching screenshot
   proximityContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -320,15 +327,21 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
   },
   proximityEmoji: {
-    fontSize: 32,
+    fontSize: 40,
     marginBottom: Spacing.xs,
+    includeFontPadding: false,
   },
   proximityName: {
     fontSize: 11,
     lineHeight: 14,
+    marginBottom: Spacing.xxs,
+  },
+  proximityAttendees: {
+    fontSize: 11,
+    marginBottom: Spacing.xxs,
   },
   proximityDistance: {
-    marginTop: Spacing.xxs,
+    fontSize: 10,
   },
 
   // Quick Actions

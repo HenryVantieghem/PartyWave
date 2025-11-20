@@ -27,13 +27,21 @@ export const Colors = {
   secondaryDark: '#3DB8B0',
   secondaryGradient: ['#4ECDC4', '#95E1D3'],
 
-  // Accent Colors
+  // Accent Colors - Gen Z Vibes
   accent: {
-    gold: '#FFD93D',      // Premium/VIP
-    purple: '#A78BFA',    // Special events
-    green: '#00FF94',     // Live/Active
-    blue: '#60A5FA',      // Info
-    orange: '#FB923C',    // Hot/Trending
+    gold: '#FFD93D',        // Premium/VIP
+    purple: '#A78BFA',      // Special events
+    green: '#00FF94',       // Live/Active
+    blue: '#60A5FA',        // Info
+    orange: '#FB923C',      // Hot/Trending
+    neon: '#00FFFF',        // Neon cyan
+    magenta: '#FF00FF',     // Electric magenta
+    lime: '#CCFF00',        // Neon lime
+    hotPink: '#FF69B4',     // Hot pink
+    lavender: '#E0B0FF',    // Soft lavender
+    mint: '#98FF98',        // Mint green
+    coral: '#FF7F50',       // Coral
+    peach: '#FFAB91',       // Peach
   },
 
   // Status Colors
@@ -109,8 +117,9 @@ export const Colors = {
   white: '#FFFFFF',
 } as const;
 
-// Gradient Presets
+// Gradient Presets - Enhanced with Gen Z aesthetics
 export const Gradients = {
+  // Core gradients
   primary: ['#FF6B6B', '#FF8787'],
   secondary: ['#4ECDC4', '#95E1D3'],
   gold: ['#FFD93D', '#FFED4E'],
@@ -119,6 +128,22 @@ export const Gradients = {
   energy: ['#FF6B6B', '#FFD93D', '#4ECDC4'],
   party: ['#FF00FF', '#FF6B6B', '#FFD93D'],
   background: ['#000000', '#0a0a0a', '#000000'],
+
+  // Holographic & Iridescent
+  holographic: ['#FF00FF', '#00FFFF', '#FFFF00', '#FF00FF'],
+  iridescent: ['#A78BFA', '#4ECDC4', '#FFD93D', '#FF6B6B'],
+  aurora: ['#A78BFA', '#FF69B4', '#4ECDC4', '#FFD93D'],
+  neon: ['#00FFFF', '#FF00FF', '#CCFF00'],
+  sunset: ['#FF6B6B', '#FF8A65', '#FFAB91', '#FFD54F'],
+  ocean: ['#0077BE', '#4ECDC4', '#95E1D3', '#00FFFF'],
+  fire: ['#FF4500', '#FF6B6B', '#FFD93D', '#FFED4E'],
+  cosmic: ['#1A1A2E', '#16213E', '#0F3460', '#533483'],
+
+  // Social vibes
+  vibe: ['#FF69B4', '#FF8A95', '#FFB3BA'],
+  chill: ['#95E1D3', '#A8E6CF', '#C7CEEA'],
+  turnt: ['#FF00FF', '#FF4500', '#FFFF00'],
+  exclusive: ['#FFD93D', '#FFA500', '#FF6B6B'],
 } as const;
 
 // Animated Gradient Configs
