@@ -229,7 +229,7 @@ export default function ProfileScreen() {
           {/* Stats Grid */}
           <View style={styles.statsGrid}>
             {stats.map((stat, index) => (
-              <Card key={index} variant="default" style={styles.statCard}>
+              <Card key={index} variant="liquid" style={styles.statCard}>
                 <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
                   {typeof stat.value === 'string' ? (
                     <Text variant="h3">{stat.value}</Text>
@@ -250,33 +250,35 @@ export default function ProfileScreen() {
           </View>
 
           {/* Tabs */}
-          <View style={styles.tabs}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'memories' && styles.tabActive]}
-              onPress={() => handleTabChange('memories')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'memories' ? 'white' : 'secondary'}
+          <Card variant="liquid" style={styles.tabsCard}>
+            <View style={styles.tabs}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'memories' && styles.tabActive]}
+                onPress={() => handleTabChange('memories')}
               >
-                Memories
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'memories' ? 'white' : 'secondary'}
+                >
+                  Memories
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'achievements' && styles.tabActive]}
-              onPress={() => handleTabChange('achievements')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'achievements' ? 'white' : 'secondary'}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'achievements' && styles.tabActive]}
+                onPress={() => handleTabChange('achievements')}
               >
-                Achievements
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'achievements' ? 'white' : 'secondary'}
+                >
+                  Achievements
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
 
           {/* Content */}
           {activeTab === 'memories' ? (
@@ -374,7 +376,7 @@ export default function ProfileScreen() {
               ) : (
                 <View style={styles.achievementsGrid}>
                   {formattedAchievements.map((achievement) => (
-                    <Card key={achievement.id} variant="glass" style={styles.achievementCard}>
+                    <Card key={achievement.id} variant="liquid" style={styles.achievementCard}>
                       <Text variant="h2" style={styles.achievementIcon}>
                         {achievement.icon}
                       </Text>
@@ -489,12 +491,12 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 11,
   },
+  tabsCard: {
+    marginBottom: Spacing.xl,
+    padding: Spacing.xs,
+  },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xs,
-    marginBottom: Spacing.xl,
   },
   tab: {
     flex: 1,

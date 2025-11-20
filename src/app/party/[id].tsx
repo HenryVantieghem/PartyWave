@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
+import { Card } from '@/components/ui/Card';
 import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, Layout, BorderRadius, Shadows } from '@/constants/theme';
 import { usePartyStore } from '@/stores/partyStore';
@@ -151,12 +152,10 @@ export default function PartyDetailScreen() {
         {/* Content */}
         <View style={styles.content}>
           {/* Party Info Card */}
-          <View style={styles.glassCard}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.cardContent}>
-              <Text variant="h2" weight="bold" style={styles.partyName}>
-                {currentParty.name}
-              </Text>
+          <Card variant="liquid" style={{ marginBottom: Spacing.base }}>
+            <Text variant="h2" weight="bold" style={styles.partyName}>
+              {currentParty.name}
+            </Text>
 
               {/* Energy Meter */}
               <View style={styles.energyContainer}>
@@ -238,8 +237,7 @@ export default function PartyDetailScreen() {
                   </Text>
                 </View>
               )}
-            </View>
-          </View>
+          </Card>
 
           {/* Host Card */}
           <View style={styles.sectionHeader}>
@@ -247,8 +245,7 @@ export default function PartyDetailScreen() {
               Hosted By
             </Text>
           </View>
-          <View style={styles.glassCard}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <Card variant="liquid">
             <View style={styles.hostCard}>
               <Avatar
                 source={{ uri: currentParty.host?.avatar_url }}
@@ -272,7 +269,7 @@ export default function PartyDetailScreen() {
                 <Ionicons name="person-add" size={18} color={Colors.primary} />
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
 
           {/* Attendees Section */}
           <View style={styles.sectionHeader}>
@@ -280,9 +277,7 @@ export default function PartyDetailScreen() {
               Going ({attendees.length})
             </Text>
           </View>
-          <View style={styles.glassCard}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.cardContent}>
+          <Card variant="liquid">
               {attendees.slice(0, 8).map((attendee, index) => (
                 <View key={attendee.id} style={styles.attendeeRow}>
                   <Avatar
@@ -316,8 +311,7 @@ export default function PartyDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
-          </View>
+          </Card>
 
           {/* Bottom spacing for button */}
           <View style={{ height: 120 }} />

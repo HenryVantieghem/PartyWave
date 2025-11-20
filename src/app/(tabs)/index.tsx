@@ -119,23 +119,25 @@ export default function DiscoverScreen() {
                     router.push(`/party/${party.id}`);
                   }}
                 >
-                  <LinearGradient
-                    colors={['rgba(255, 107, 107, 0.15)', 'rgba(255, 107, 107, 0.05)']}
-                    style={styles.proximityGradient}
-                  >
-                    <Text variant="h1" style={styles.proximityEmoji}>
-                      {party.emoji}
-                    </Text>
-                    <Text variant="body" weight="bold" center style={styles.proximityName}>
-                      {party.name}
-                    </Text>
-                    <Text variant="caption" color="secondary" center>
-                      {party.attendees} going
-                    </Text>
-                    <Text variant="caption" color="tertiary" center style={styles.proximityDistance}>
-                      {party.distance}
-                    </Text>
-                  </LinearGradient>
+                  <Card variant="liquid" style={styles.proximityCard}>
+                    <LinearGradient
+                      colors={['rgba(255, 107, 107, 0.2)', 'rgba(255, 107, 107, 0.05)']}
+                      style={styles.proximityGradient}
+                    >
+                      <Text variant="h1" style={styles.proximityEmoji}>
+                        {party.emoji}
+                      </Text>
+                      <Text variant="body" weight="bold" center style={styles.proximityName}>
+                        {party.name}
+                      </Text>
+                      <Text variant="caption" color="secondary" center>
+                        {party.attendees} going
+                      </Text>
+                      <Text variant="caption" color="tertiary" center style={styles.proximityDistance}>
+                        {party.distance}
+                      </Text>
+                    </LinearGradient>
+                  </Card>
                 </TouchableOpacity>
               ))}
             </View>
@@ -154,7 +156,7 @@ export default function DiscoverScreen() {
                   style={styles.quickAction}
                   onPress={action.action}
                 >
-                  <Card variant="glass" style={styles.quickActionCard}>
+                  <Card variant="liquid" style={styles.quickActionCard}>
                     <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
                       <Ionicons name={action.icon as any} size={32} color={action.color} />
                     </View>
@@ -182,7 +184,7 @@ export default function DiscoverScreen() {
                 onPress={() => router.push(`/party/${party.id}`)}
                 style={styles.partyCard}
               >
-                <Card variant="glass">
+                <Card variant="liquid">
                   <View style={styles.partyCardContent}>
                     {/* Party Image */}
                     {party.cover_image_url ? (
@@ -303,12 +305,16 @@ const styles = StyleSheet.create({
     width: (width - Spacing.lg * 2) / 3 - 8,
     aspectRatio: 1,
   },
-  proximityGradient: {
+  proximityCard: {
     width: '100%',
     height: '100%',
     borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: Colors.border.primary,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  proximityGradient: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.sm,

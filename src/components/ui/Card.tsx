@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/colors';
-import { Spacing, BorderRadius, Shadows, GlassStyles } from '@/constants/theme';
+import { Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
-type CardVariant = 'default' | 'glass' | 'elevated';
+type CardVariant = 'default' | 'glass' | 'elevated' | 'liquid';
 
 interface CardProps {
   children: React.ReactNode;
@@ -30,10 +31,25 @@ export const Card: React.FC<CardProps> = ({
     style,
   ];
 
-  if (variant === 'glass') {
+  if (variant === 'glass' || variant === 'liquid') {
+    const intensity = variant === 'liquid' ? 95 : 20;
     const content = (
       <View style={[styles.glassCard, cardStyle]}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        {/* Liquid Glass Background */}
+        <BlurView 
+          intensity={intensity} 
+          tint="dark" 
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Subtle gradient overlay for liquid effect */}
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0.08)', 'transparent', 'rgba(255, 255, 255, 0.03)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Border glow effect */}
+        <View style={styles.glassBorder} />
         <View style={styles.glassContent}>{children}</View>
       </View>
     );
@@ -69,10 +85,25 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
   },
   glass: {
-    ...GlassStyles.card,
+    backgroundColor: 'rgba(26, 26, 26, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  liquid: {
+    backgroundColor: 'rgba(26, 26, 26, 0.3)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    ...Shadows.md,
   },
   glassCard: {
     position: 'relative',
+  },
+  glassBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    pointerEvents: 'none',
   },
   glassContent: {
     position: 'relative',

@@ -109,33 +109,35 @@ export default function PassportScreen() {
           }
         >
           {/* Tabs */}
-          <View style={styles.tabs}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}
-              onPress={() => handleTabChange('upcoming')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'upcoming' ? 'white' : 'secondary'}
+          <Card variant="liquid" style={styles.tabsCard}>
+            <View style={styles.tabs}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}
+                onPress={() => handleTabChange('upcoming')}
               >
-                Upcoming ({upcomingParties.length})
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'upcoming' ? 'white' : 'secondary'}
+                >
+                  Upcoming ({upcomingParties.length})
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'past' && styles.tabActive]}
-              onPress={() => handleTabChange('past')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'past' ? 'white' : 'secondary'}
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'past' && styles.tabActive]}
+                onPress={() => handleTabChange('past')}
               >
-                Past ({pastParties.length})
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'past' ? 'white' : 'secondary'}
+                >
+                  Past ({pastParties.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
 
           {/* Parties List */}
           {isLoading && displayParties.length === 0 ? (
@@ -184,7 +186,7 @@ export default function PassportScreen() {
                     style={styles.partyCard}
                     onPress={() => handlePartyPress(party.id)}
                   >
-                    <Card variant="glass" style={styles.card}>
+                    <Card variant="liquid" style={styles.card}>
                       <View style={styles.partyContent}>
                         {/* Party Image/Emoji */}
                         {party.cover_image_url ? (
@@ -300,12 +302,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing['4xl'],
   },
+  tabsCard: {
+    marginBottom: Spacing.xl,
+    padding: Spacing.xs,
+  },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xs,
-    marginBottom: Spacing.xl,
   },
   tab: {
     flex: 1,

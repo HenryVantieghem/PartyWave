@@ -151,21 +151,23 @@ export default function CrewScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={Colors.text.tertiary} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search your party crew..."
-              placeholderTextColor={Colors.text.tertiary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
+          <Card variant="liquid" style={styles.searchCard}>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={Colors.text.tertiary} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search your party crew..."
+                placeholderTextColor={Colors.text.tertiary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+          </Card>
 
           {/* Stats */}
           <View style={styles.statsContainer}>
             {stats.map((stat, index) => (
-              <View key={index} style={styles.statItem}>
+              <Card key={index} variant="liquid" style={styles.statItem}>
                 <Ionicons name={stat.icon as any} size={24} color={Colors.primary} />
                 <Text variant="h3" weight="bold" center style={styles.statValue}>
                   {stat.value}
@@ -173,37 +175,39 @@ export default function CrewScreen() {
                 <Text variant="caption" center color="secondary" style={styles.statLabel}>
                   {stat.label}
                 </Text>
-              </View>
+              </Card>
             ))}
           </View>
 
           {/* Segmented Control */}
-          <View style={styles.segmentedControl}>
-            <TouchableOpacity
-              style={[styles.segment, activeTab === 'crew' && styles.segmentActive]}
-              onPress={() => handleTabChange('crew')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'crew' ? 'white' : 'secondary'}
+          <Card variant="liquid" style={styles.segmentedControlCard}>
+            <View style={styles.segmentedControl}>
+              <TouchableOpacity
+                style={[styles.segment, activeTab === 'crew' && styles.segmentActive]}
+                onPress={() => handleTabChange('crew')}
               >
-                My Crew
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.segment, activeTab === 'suggestions' && styles.segmentActive]}
-              onPress={() => handleTabChange('suggestions')}
-            >
-              <Text
-                variant="body"
-                weight="semibold"
-                color={activeTab === 'suggestions' ? 'white' : 'secondary'}
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'crew' ? 'white' : 'secondary'}
+                >
+                  My Crew
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.segment, activeTab === 'suggestions' && styles.segmentActive]}
+                onPress={() => handleTabChange('suggestions')}
               >
-                Suggestions
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <Text
+                  variant="body"
+                  weight="semibold"
+                  color={activeTab === 'suggestions' ? 'white' : 'secondary'}
+                >
+                  Suggestions
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
 
           {/* Content */}
           {activeTab === 'crew' ? (
@@ -214,7 +218,7 @@ export default function CrewScreen() {
                     Pending Requests
                   </Text>
                   {pendingRequests.map((request) => (
-                    <Card key={request.id} variant="glass" style={styles.memberCard}>
+                    <Card key={request.id} variant="liquid" style={styles.memberCard}>
                       <View style={styles.memberContent}>
                         <Avatar
                           source={request.friend?.avatar_url}
@@ -272,7 +276,7 @@ export default function CrewScreen() {
                   const isBFF = friend.party_score > 100;
 
                   return (
-                    <Card key={connection.id} variant="glass" style={styles.memberCard}>
+                    <Card key={connection.id} variant="liquid" style={styles.memberCard}>
                       <View style={styles.memberContent}>
                         <Avatar
                           source={friend.avatar_url}
@@ -346,7 +350,7 @@ export default function CrewScreen() {
                 </View>
               ) : (
                 searchResults.map((user) => (
-                  <Card key={user.id} variant="glass" style={styles.memberCard}>
+                  <Card key={user.id} variant="liquid" style={styles.memberCard}>
                     <View style={styles.memberContent}>
                       <Avatar
                         source={user.avatar_url}
@@ -412,14 +416,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing['4xl'],
   },
+  searchCard: {
+    marginBottom: Spacing.lg,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    marginBottom: Spacing.lg,
   },
   searchIcon: {
     marginRight: Spacing.sm,
@@ -438,6 +442,8 @@ const styles = StyleSheet.create({
   statItem: {
     alignItems: 'center',
     flex: 1,
+    padding: Spacing.md,
+    marginHorizontal: Spacing.xs,
   },
   statValue: {
     marginTop: Spacing.xs,
@@ -446,12 +452,12 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 11,
   },
+  segmentedControlCard: {
+    marginBottom: Spacing.xl,
+    padding: Spacing.xs,
+  },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xs,
-    marginBottom: Spacing.xl,
   },
   segment: {
     flex: 1,

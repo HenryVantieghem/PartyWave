@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
 import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, Layout, BorderRadius, Shadows } from '@/constants/theme';
 import { usePartyStore } from '@/stores/partyStore';
@@ -292,28 +293,25 @@ export default function CreatePartyScreen() {
             <Text variant="h4" weight="bold" style={styles.sectionTitle}>
               Party Details
             </Text>
-            <View style={styles.glassCard}>
-              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardContent}>
-                <Input
-                  placeholder="Party Name"
-                  value={name}
-                  onChangeText={setName}
-                  leftIcon="sparkles"
-                  maxLength={50}
-                />
-                <Input
-                  placeholder="Description (optional)"
-                  value={description}
-                  onChangeText={setDescription}
-                  leftIcon="text"
-                  multiline
-                  numberOfLines={3}
-                  style={styles.descriptionInput}
-                  maxLength={200}
-                />
-              </View>
-            </View>
+            <Card variant="liquid">
+              <Input
+                placeholder="Party Name"
+                value={name}
+                onChangeText={setName}
+                leftIcon="sparkles"
+                maxLength={50}
+              />
+              <Input
+                placeholder="Description (optional)"
+                value={description}
+                onChangeText={setDescription}
+                leftIcon="text"
+                multiline
+                numberOfLines={3}
+                style={styles.descriptionInput}
+                maxLength={200}
+              />
+            </Card>
           </View>
 
           {/* Date & Time */}
@@ -321,54 +319,51 @@ export default function CreatePartyScreen() {
             <Text variant="h4" weight="bold" style={styles.sectionTitle}>
               Date & Time
             </Text>
-            <View style={styles.glassCard}>
-              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardContent}>
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowDatePicker(true);
-                  }}
-                  style={styles.dateTimeButton}
-                >
-                  <View style={styles.dateTimeIcon}>
-                    <Ionicons name="calendar" size={20} color={Colors.primary} />
-                  </View>
-                  <View style={styles.dateTimeText}>
-                    <Text variant="caption" color="secondary">
-                      Date
-                    </Text>
-                    <Text variant="body" weight="semibold">
-                      {formatDate(dateTime)}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
-                </TouchableOpacity>
+            <Card variant="liquid">
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowDatePicker(true);
+                }}
+                style={styles.dateTimeButton}
+              >
+                <View style={styles.dateTimeIcon}>
+                  <Ionicons name="calendar" size={20} color={Colors.primary} />
+                </View>
+                <View style={styles.dateTimeText}>
+                  <Text variant="caption" color="secondary">
+                    Date
+                  </Text>
+                  <Text variant="body" weight="semibold">
+                    {formatDate(dateTime)}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
 
-                <View style={styles.divider} />
+              <View style={styles.divider} />
 
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowTimePicker(true);
-                  }}
-                  style={styles.dateTimeButton}
-                >
-                  <View style={styles.dateTimeIcon}>
-                    <Ionicons name="time" size={20} color={Colors.secondary} />
-                  </View>
-                  <View style={styles.dateTimeText}>
-                    <Text variant="caption" color="secondary">
-                      Time
-                    </Text>
-                    <Text variant="body" weight="semibold">
-                      {formatTime(dateTime)}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowTimePicker(true);
+                }}
+                style={styles.dateTimeButton}
+              >
+                <View style={styles.dateTimeIcon}>
+                  <Ionicons name="time" size={20} color={Colors.secondary} />
+                </View>
+                <View style={styles.dateTimeText}>
+                  <Text variant="caption" color="secondary">
+                    Time
+                  </Text>
+                  <Text variant="body" weight="semibold">
+                    {formatTime(dateTime)}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
+            </Card>
           </View>
 
           {/* Location */}
@@ -376,25 +371,22 @@ export default function CreatePartyScreen() {
             <Text variant="h4" weight="bold" style={styles.sectionTitle}>
               Location
             </Text>
-            <View style={styles.glassCard}>
-              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardContent}>
-                <Input
-                  placeholder="Location Name"
-                  value={locationName}
-                  onChangeText={setLocationName}
-                  leftIcon="location"
-                  maxLength={100}
-                />
-                <Input
-                  placeholder="Full Address (optional)"
-                  value={locationAddress}
-                  onChangeText={setLocationAddress}
-                  leftIcon="map"
-                  maxLength={200}
-                />
-              </View>
-            </View>
+            <Card variant="liquid">
+              <Input
+                placeholder="Location Name"
+                value={locationName}
+                onChangeText={setLocationName}
+                leftIcon="location"
+                maxLength={100}
+              />
+              <Input
+                placeholder="Full Address (optional)"
+                value={locationAddress}
+                onChangeText={setLocationAddress}
+                leftIcon="map"
+                maxLength={200}
+              />
+            </Card>
           </View>
 
           {/* Party Settings */}
@@ -402,66 +394,62 @@ export default function CreatePartyScreen() {
             <Text variant="h4" weight="bold" style={styles.sectionTitle}>
               Settings
             </Text>
-            <View style={styles.glassCard}>
-              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardContent}>
-                <Input
-                  placeholder="Max Attendees (optional)"
-                  value={maxAttendees}
-                  onChangeText={setMaxAttendees}
-                  leftIcon="people"
-                  keyboardType="number-pad"
-                  maxLength={4}
-                />
+            <Card variant="liquid">
+              <Input
+                placeholder="Max Attendees (optional)"
+                value={maxAttendees}
+                onChangeText={setMaxAttendees}
+                leftIcon="people"
+                keyboardType="number-pad"
+                maxLength={4}
+              />
 
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setIsPrivate(!isPrivate);
-                  }}
-                  style={styles.settingRow}
-                >
-                  <View style={styles.settingLeft}>
-                    <View style={styles.settingIcon}>
-                      <Ionicons name="lock-closed" size={20} color={Colors.accent.purple} />
-                    </View>
-                    <View>
-                      <Text variant="body" weight="semibold">
-                        Private Party
-                      </Text>
-                      <Text variant="caption" color="secondary">
-                        Invite only, requires code to join
-                      </Text>
-                    </View>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setIsPrivate(!isPrivate);
+                }}
+                style={styles.settingRow}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={styles.settingIcon}>
+                    <Ionicons name="lock-closed" size={20} color={Colors.accent.purple} />
                   </View>
+                  <View>
+                    <Text variant="body" weight="semibold">
+                      Private Party
+                    </Text>
+                    <Text variant="caption" color="secondary">
+                      Invite only, requires code to join
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.toggle,
+                    isPrivate && styles.toggleActive,
+                  ]}
+                >
                   <View
                     style={[
-                      styles.toggle,
-                      isPrivate && styles.toggleActive,
+                      styles.toggleThumb,
+                      isPrivate && styles.toggleThumbActive,
                     ]}
-                  >
-                    <View
-                      style={[
-                        styles.toggleThumb,
-                        isPrivate && styles.toggleThumbActive,
-                      ]}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
+                  />
+                </View>
+              </TouchableOpacity>
+            </Card>
           </View>
 
           {/* Info Card */}
-          <View style={styles.infoCard}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <Card variant="liquid" style={styles.infoCard}>
             <View style={styles.infoContent}>
               <Ionicons name="information-circle" size={20} color={Colors.accent.blue} />
               <Text variant="caption" color="secondary" style={styles.infoText}>
                 Your party will be visible to everyone nearby. You can edit or cancel it anytime.
               </Text>
             </View>
-          </View>
+          </Card>
 
           {/* Bottom spacing */}
           <View style={{ height: 100 }} />
