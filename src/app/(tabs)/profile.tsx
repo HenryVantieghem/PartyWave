@@ -203,9 +203,11 @@ export default function ProfileScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text variant="h2" weight="black" center style={styles.headerTitle}>
-              Party Resume
-            </Text>
+            <View style={styles.headerCenter}>
+              <Text variant="h2" weight="black" style={styles.headerTitle}>
+                Party Resume
+              </Text>
+            </View>
             <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
               <Avatar source={profile?.avatar_url} name={profile?.display_name} size="sm" />
             </TouchableOpacity>
