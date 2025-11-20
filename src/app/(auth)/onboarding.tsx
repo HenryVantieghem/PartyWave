@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
-  Image,
   Animated,
   Text as RNText,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Colors, Gradients } from '@/constants/colors';
 import { Spacing } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -61,6 +61,7 @@ export default function OnboardingScreen() {
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const scrollTo = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (currentIndex < slides.length - 1) {
       slidesRef.current?.scrollToIndex({
         index: currentIndex + 1,
@@ -72,6 +73,7 @@ export default function OnboardingScreen() {
   };
 
   const skip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.replace('/(auth)/welcome');
   };
 
@@ -186,7 +188,7 @@ export default function OnboardingScreen() {
             </Button>
 
             <Button onPress={skip} variant="ghost" size="medium" fullWidth>
-              {currentIndex === slides.length - 1 ? 'Sign In' : 'Skip'}
+              {currentIndex === slides.length - 1 ? 'Sign In Instead' : 'Skip'}
             </Button>
           </View>
         </View>
@@ -225,17 +227,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   emojiContainer: {
-    width: 260,
-    height: 260,
-    borderRadius: 130,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing['5xl'],
+    marginBottom: Spacing['6xl'],
     overflow: 'hidden',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
   },
   emoji: {
-    fontSize: 140,
-    lineHeight: 140,
+    fontSize: 150,
+    lineHeight: 150,
     textAlign: 'center',
     includeFontPadding: false,
     textAlignVertical: 'center',
@@ -247,12 +254,13 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: Spacing.lg,
-    lineHeight: 36,
+    lineHeight: 38,
+    fontSize: 32,
   },
   description: {
     maxWidth: 320,
     lineHeight: 24,
-    fontSize: 16,
+    fontSize: 17,
   },
   footer: {
     paddingHorizontal: Spacing.lg,

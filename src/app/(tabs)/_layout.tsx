@@ -1,9 +1,10 @@
 import { Tabs } from 'expo-router';
-import { View, Platform, StyleSheet } from 'react-native';
+import { View, Platform, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Colors } from '@/constants/colors';
+import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function TabLayout() {
   return (
@@ -20,15 +21,14 @@ export default function TabLayout() {
           backgroundColor: Platform.OS === 'ios' ? 'transparent' : Colors.card,
           borderTopWidth: 0,
           elevation: 0,
-          height: Platform.OS === 'ios' ? 90 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
-          paddingTop: 10,
-          paddingHorizontal: Spacing.md,
-          // Floating glass effect
+          height: Platform.OS === 'ios' ? 88 : 72,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 8,
+          paddingHorizontal: Spacing.sm,
           shadowColor: Colors.primary,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
@@ -38,12 +38,12 @@ export default function TabLayout() {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: Spacing.md,
-                right: Spacing.md,
+                left: Spacing.sm,
+                right: Spacing.sm,
                 bottom: 0,
-                borderRadius: BorderRadius.xl,
+                borderRadius: BorderRadius['2xl'],
                 borderWidth: 1,
-                borderColor: Colors.glass.border,
+                borderColor: 'rgba(255, 255, 255, 0.12)',
                 overflow: 'hidden',
               }}
             />
@@ -52,11 +52,11 @@ export default function TabLayout() {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: Spacing.md,
-                right: Spacing.md,
+                left: Spacing.sm,
+                right: Spacing.sm,
                 bottom: 0,
                 backgroundColor: Colors.card,
-                borderRadius: BorderRadius.xl,
+                borderRadius: BorderRadius['2xl'],
                 borderWidth: 1,
                 borderColor: Colors.border.default,
               }}
@@ -66,10 +66,10 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: 4,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: 2,
         },
       }}
     >
@@ -77,22 +77,18 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: focused ? Colors.primary + '20' : 'transparent',
-              }}
-            >
-              <Ionicons
-                name={focused ? 'compass' : 'compass-outline'}
-                size={size}
-                color={color}
-              />
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={[Colors.primary + '30', Colors.primary + '10']}
+                  style={styles.iconGradient}
+                >
+                  <Text style={styles.emojiIcon}>⚡</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.emojiIconInactive}>⚡</Text>
+              )}
             </View>
           ),
         }}
@@ -101,22 +97,18 @@ export default function TabLayout() {
         name="passport"
         options={{
           title: 'Parties',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: focused ? Colors.primary + '20' : 'transparent',
-              }}
-            >
-              <Ionicons
-                name={focused ? 'calendar' : 'calendar-outline'}
-                size={size}
-                color={color}
-              />
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={[Colors.primary + '30', Colors.primary + '10']}
+                  style={styles.iconGradient}
+                >
+                  <Text style={styles.emojiIcon}>📅</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.emojiIconInactive}>📅</Text>
+              )}
             </View>
           ),
         }}
@@ -126,23 +118,13 @@ export default function TabLayout() {
         options={{
           title: '',
           tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: focused ? Colors.primary : Colors.secondary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-                shadowColor: focused ? Colors.primary : Colors.secondary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 8,
-              }}
-            >
-              <Ionicons name="camera" size={28} color={Colors.white} />
+            <View style={styles.cameraContainer}>
+              <LinearGradient
+                colors={focused ? Gradients.primary : ['#4ECDC4', '#95E1D3']}
+                style={styles.cameraButton}
+              >
+                <Text style={styles.cameraEmoji}>📸</Text>
+              </LinearGradient>
             </View>
           ),
         }}
@@ -151,22 +133,18 @@ export default function TabLayout() {
         name="crew"
         options={{
           title: 'Crew',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: focused ? Colors.primary + '20' : 'transparent',
-              }}
-            >
-              <Ionicons
-                name={focused ? 'people' : 'people-outline'}
-                size={size}
-                color={color}
-              />
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={[Colors.primary + '30', Colors.primary + '10']}
+                  style={styles.iconGradient}
+                >
+                  <Text style={styles.emojiIcon}>👥</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.emojiIconInactive}>👥</Text>
+              )}
             </View>
           ),
         }}
@@ -175,22 +153,18 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: focused ? Colors.primary + '20' : 'transparent',
-              }}
-            >
-              <Ionicons
-                name={focused ? 'person' : 'person-outline'}
-                size={size}
-                color={color}
-              />
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              {focused ? (
+                <LinearGradient
+                  colors={[Colors.primary + '30', Colors.primary + '10']}
+                  style={styles.iconGradient}
+                >
+                  <Text style={styles.emojiIcon}>👤</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.emojiIconInactive}>👤</Text>
+              )}
             </View>
           ),
         }}
@@ -198,3 +172,58 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.primary + '40',
+  },
+  emojiIcon: {
+    fontSize: 24,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  emojiIconInactive: {
+    fontSize: 24,
+    opacity: 0.6,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  cameraContainer: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  cameraButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  cameraEmoji: {
+    fontSize: 28,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+});

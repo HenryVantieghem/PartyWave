@@ -66,7 +66,15 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       const { data, error } = await query;
 
       if (error) throw error;
-      set({ parties: data || [], isLoading: false });
+      
+      // Map database fields to TypeScript types
+      const mappedData = (data || []).map((party: any) => ({
+        ...party,
+        name: party.title || party.name,
+        location_name: party.location || party.location_name,
+      }));
+      
+      set({ parties: mappedData, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -95,7 +103,15 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         .order('date_time', { ascending: true });
 
       if (error) throw error;
-      set({ myParties: data || [], isLoading: false });
+      
+      // Map database fields to TypeScript types
+      const mappedData = (data || []).map((party: any) => ({
+        ...party,
+        name: party.title || party.name,
+        location_name: party.location || party.location_name,
+      }));
+      
+      set({ myParties: mappedData, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -116,7 +132,15 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         .single();
 
       if (error) throw error;
-      set({ currentParty: data, isLoading: false });
+      
+      // Map database fields to TypeScript types
+      const mappedData = data ? {
+        ...data,
+        name: data.title || data.name,
+        location_name: data.location || data.location_name,
+      } : null;
+      
+      set({ currentParty: mappedData, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -127,9 +151,27 @@ export const usePartyStore = create<PartyState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      // Map fields to match database schema
+      const partyData: any = {
+        title: party.name, // Database uses 'title', TypeScript uses 'name'
+        description: party.description,
+        host_id: party.host_id,
+        date_time: party.date_time,
+        location: party.location_name, // Database uses 'location', TypeScript uses 'location_name'
+        location_address: party.location_address,
+        latitude: party.latitude,
+        longitude: party.longitude,
+        cover_image_url: party.cover_image_url,
+        max_attendees: party.max_attendees,
+        energy_score: party.energy_score || 0,
+        status: party.status || 'upcoming',
+        invite_code: party.invite_code,
+        is_private: party.is_private || false,
+      };
+
       const { data, error } = await supabase
         .from('parties')
-        .insert(party)
+        .insert(partyData)
         .select(`
           *,
           host:profiles(*)
@@ -138,8 +180,15 @@ export const usePartyStore = create<PartyState>((set, get) => ({
 
       if (error) throw error;
 
+      // Map response back to TypeScript type
+      const mappedData = {
+        ...data,
+        name: data.title,
+        location_name: data.location,
+      };
+
       set({ isLoading: false });
-      return data;
+      return mappedData;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       throw error;

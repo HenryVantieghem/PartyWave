@@ -24,7 +24,7 @@ import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, Layout, BorderRadius, Shadows } from '@/constants/theme';
 import { usePartyStore } from '@/stores/partyStore';
 import { useAuthStore } from '@/stores/authStore';
-import { formatDate, formatTime } from '@/lib/utils';
+import { formatDate, formatTime, generateInviteCode } from '@/lib/utils';
 
 export default function CreatePartyScreen() {
   const router = useRouter();
@@ -90,37 +90,98 @@ export default function CreatePartyScreen() {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
     if (selectedDate) {
-      setDateTime(selectedDate);
+      const newDateTime = new Date(selectedDate);
+      newDateTime.setHours(dateTime.getHours());
+      newDateTime.setMinutes(dateTime.getMinutes());
+      setDateTime(newDateTime);
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
     }
   };
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(false);
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
     if (selectedTime) {
-      setDateTime(selectedTime);
+      const newDateTime = new Date(dateTime);
+      newDateTime.setHours(selectedTime.getHours());
+      newDateTime.setMinutes(selectedTime.getMinutes());
+      setDateTime(newDateTime);
+      if (Platform.OS === 'ios') {
+        setShowTimePicker(false);
+      }
     }
   };
 
   const handleCreate = async () => {
     if (!name.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Required Field', 'Please enter a party name');
       return;
     }
 
     if (!locationName.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Required Field', 'Please enter a location');
       return;
     }
 
     if (!profile?.id) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', 'You must be logged in to create a party');
       return;
     }
 
+    // Validate date is in the future
+    if (dateTime <= new Date()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Invalid Date', 'Party date must be in the future');
+      return;
+    }
+
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      let coverImageUrl: string | undefined = undefined;
+
+      // Upload cover image if provided
+      if (coverImage) {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const fileName = `${profile.id}/${Date.now()}.jpg`;
+          
+          // Convert URI to blob
+          const response = await fetch(coverImage);
+          const blob = await response.blob();
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('party-covers')
+            .upload(fileName, blob, {
+              contentType: 'image/jpeg',
+              upsert: false,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('party-covers')
+            .getPublicUrl(fileName);
+
+          coverImageUrl = publicUrl;
+        } catch (uploadError: any) {
+          console.error('Image upload error:', uploadError);
+          // Continue without cover image if upload fails
+        }
+      }
+
+      // Generate invite code if private (database will auto-generate, but we can set it)
+      const inviteCode = isPrivate ? generateInviteCode() : undefined;
 
       const party = await createParty({
         host_id: profile.id,
@@ -129,11 +190,16 @@ export default function CreatePartyScreen() {
         date_time: dateTime.toISOString(),
         location_name: locationName.trim(),
         location_address: locationAddress.trim() || undefined,
+        cover_image_url: coverImageUrl,
         max_attendees: maxAttendees ? parseInt(maxAttendees) : undefined,
         is_private: isPrivate,
+        invite_code: inviteCode,
+        energy_score: 0,
         status: 'upcoming',
       });
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
       Alert.alert('Success', '🎉 Your party has been created!', [
         {
           text: 'View Party',
@@ -141,7 +207,9 @@ export default function CreatePartyScreen() {
         },
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create party');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      console.error('Create party error:', error);
+      Alert.alert('Error', error.message || 'Failed to create party. Please try again.');
     }
   };
 
@@ -419,29 +487,63 @@ export default function CreatePartyScreen() {
         </SafeAreaView>
       </View>
 
-      {/* Date Picker */}
+      {/* Date Picker Modal */}
       {showDatePicker && (
-        <DateTimePicker
-          value={dateTime}
-          mode="date"
-          display="spinner"
-          onChange={handleDateChange}
-          minimumDate={new Date()}
-          textColor={Colors.white}
-          themeVariant="dark"
-        />
+        <View style={styles.pickerModal}>
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <Text variant="h4" weight="bold">
+                Select Date
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                style={styles.pickerClose}
+              >
+                <Ionicons name="close" size={24} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={dateTime}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+              textColor={Colors.white}
+              themeVariant="dark"
+              style={styles.picker}
+            />
+          </View>
+        </View>
       )}
 
-      {/* Time Picker */}
+      {/* Time Picker Modal */}
       {showTimePicker && (
-        <DateTimePicker
-          value={dateTime}
-          mode="time"
-          display="spinner"
-          onChange={handleTimeChange}
-          textColor={Colors.white}
-          themeVariant="dark"
-        />
+        <View style={styles.pickerModal}>
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <Text variant="h4" weight="bold">
+                Select Time
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(false)}
+                style={styles.pickerClose}
+              >
+                <Ionicons name="close" size={24} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={dateTime}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleTimeChange}
+              textColor={Colors.white}
+              themeVariant="dark"
+              style={styles.picker}
+            />
+          </View>
+        </View>
       )}
     </View>
   );
@@ -636,5 +738,40 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     padding: Spacing.base,
+  },
+  pickerModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
+  },
+  pickerContainer: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing['2xl'],
+    maxHeight: '50%',
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.default,
+  },
+  pickerClose: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  picker: {
+    width: '100%',
+    height: 200,
   },
 });

@@ -141,20 +141,25 @@ export default function SignupScreen() {
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
-                onPress={() => router.push('/(auth)/welcome')}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.replace('/(auth)/welcome');
+                }}
                 style={styles.backButton}
               >
-                <Text variant="body" color="accent">
+                <Text variant="body" color="accent" weight="semibold">
                   ← Back
                 </Text>
               </TouchableOpacity>
 
-              <Text variant="h1" weight="black" center style={styles.title}>
-                Join The Party
-              </Text>
-              <Text variant="body" center color="secondary" style={styles.subtitle}>
-                Create your account and start discovering
-              </Text>
+              <View style={styles.titleContainer}>
+                <Text variant="h1" weight="black" center style={styles.title}>
+                  Join The Party
+                </Text>
+                <Text variant="body" center color="secondary" style={styles.subtitle}>
+                  Create your account and start discovering
+                </Text>
+              </View>
             </View>
 
             {/* Form */}
@@ -238,7 +243,12 @@ export default function SignupScreen() {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <TouchableOpacity 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/(auth)/login');
+                }}
+              >
                 <Text variant="body" center color="secondary">
                   Already have an account?{' '}
                   <Text variant="body" color="accent" weight="semibold">
@@ -277,12 +287,17 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: Spacing.xl,
     paddingVertical: Spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  titleContainer: {
+    alignItems: 'center',
   },
   title: {
     color: Colors.primary,
     letterSpacing: 1,
     marginBottom: Spacing.md,
-    lineHeight: 40,
+    lineHeight: 44,
+    fontSize: 36,
   },
   subtitle: {
     fontSize: 17,
@@ -292,7 +307,7 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
   },
   signupButton: {
-    marginTop: Spacing.base,
+    marginTop: Spacing.lg,
   },
   terms: {
     marginTop: Spacing.md,

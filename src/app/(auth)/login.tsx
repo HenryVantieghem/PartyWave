@@ -87,20 +87,25 @@ export default function LoginScreen() {
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
-                onPress={() => router.push('/(auth)/welcome')}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/(auth)/welcome');
+                }}
                 style={styles.backButton}
               >
-                <Text variant="body" color="accent">
+                <Text variant="body" color="accent" weight="semibold">
                   ← Back
                 </Text>
               </TouchableOpacity>
 
-              <Text variant="h1" weight="black" center style={styles.title}>
-                THE HANGOUT
-              </Text>
-              <Text variant="body" center color="secondary" style={styles.subtitle}>
-                Welcome back to the party
-              </Text>
+              <View style={styles.titleContainer}>
+                <Text variant="h1" weight="black" center style={styles.title}>
+                  THE HANGOUT
+                </Text>
+                <Text variant="body" center color="secondary" style={styles.subtitle}>
+                  Welcome back to the party
+                </Text>
+              </View>
             </View>
 
             {/* Form */}
@@ -130,8 +135,14 @@ export default function LoginScreen() {
                 error={errors.password}
               />
 
-              <TouchableOpacity onPress={() => {/* TODO: Implement forgot password */}}>
-                <Text variant="caption" color="accent" center style={styles.forgotPassword}>
+              <TouchableOpacity 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  // TODO: Implement forgot password
+                }}
+                style={styles.forgotPassword}
+              >
+                <Text variant="caption" color="accent" center weight="semibold">
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
@@ -159,7 +170,10 @@ export default function LoginScreen() {
 
               {/* Social Login */}
               <Button
-                onPress={() => {/* TODO: Apple Sign In */}}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  // TODO: Apple Sign In
+                }}
                 variant="outline"
                 size="large"
                 fullWidth
@@ -168,7 +182,10 @@ export default function LoginScreen() {
               </Button>
 
               <Button
-                onPress={() => {/* TODO: Google Sign In */}}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  // TODO: Google Sign In
+                }}
                 variant="outline"
                 size="large"
                 fullWidth
@@ -179,7 +196,12 @@ export default function LoginScreen() {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+              <TouchableOpacity 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/(auth)/signup');
+                }}
+              >
                 <Text variant="body" center color="secondary">
                   Don't have an account?{' '}
                   <Text variant="body" color="accent" weight="semibold">
@@ -220,11 +242,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     alignSelf: 'flex-start',
   },
+  titleContainer: {
+    alignItems: 'center',
+  },
   title: {
     color: Colors.primary,
     letterSpacing: 2,
     marginBottom: Spacing.md,
-    lineHeight: 40,
+    lineHeight: 44,
+    fontSize: 36,
   },
   subtitle: {
     fontSize: 17,
@@ -237,6 +263,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     marginBottom: Spacing.sm,
     paddingVertical: Spacing.xs,
+    alignSelf: 'center',
   },
   loginButton: {
     marginTop: Spacing.md,
@@ -254,6 +281,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: Spacing.base,
     fontSize: 12,
+    fontWeight: '600',
   },
   footer: {
     marginTop: 'auto',
