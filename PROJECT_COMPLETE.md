@@ -19,12 +19,13 @@ The Hangout is a fully functional, production-ready React Native mobile app for 
 ## 🏗️ Architecture Overview
 
 ### Tech Stack
-- **Frontend**: React Native + Expo 51.0
+- **Platform**: iOS React Native Expo Go Mobile App
+- **Frontend**: React Native + Expo ~54.0
 - **Language**: TypeScript (strict mode)
 - **State Management**: Zustand (4 stores)
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Real-time)
-- **Routing**: Expo Router v3 (file-based)
-- **Styling**: Custom design system + NativeWind
+- **Routing**: Expo Router v6 (file-based)
+- **Styling**: React Native StyleSheet with custom design system
 - **Animations**: React Native Reanimated + Expo Linear Gradient
 - **Icons**: Expo Vector Icons (Ionicons)
 

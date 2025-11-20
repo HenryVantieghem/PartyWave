@@ -22,13 +22,14 @@ The sickest social party discovery and memory sharing app. Built with React Nati
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React Native + Expo 51.0
+- **Platform**: iOS React Native Expo Go Mobile App
+- **Frontend**: React Native + Expo ~54.0
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Real-time)
 - **State Management**: Zustand
-- **Navigation**: Expo Router v3 (file-based routing)
+- **Navigation**: Expo Router v6 (file-based routing)
 - **Language**: TypeScript (strict mode)
-- **Styling**: Custom design system + NativeWind
-- **Animations**: Reanimated + Linear Gradient
+- **Styling**: React Native StyleSheet with custom design system
+- **Animations**: React Native Reanimated + Expo Linear Gradient
 - **Icons**: Expo Vector Icons (Ionicons)
 
 ---
@@ -39,7 +40,7 @@ The sickest social party discovery and memory sharing app. Built with React Nati
 - Node.js 18+
 - npm or yarn
 - Expo CLI
-- iOS Simulator (Mac) or Android Emulator
+- Expo Go app installed on iOS device (or iOS Simulator on Mac)
 
 ### Installation
 
@@ -55,9 +56,8 @@ npm install
 npm start
 
 # 4. Launch
-# Press 'i' for iOS Simulator
-# Press 'a' for Android Emulator
-# Scan QR code for physical device
+# Scan QR code with Expo Go app on iOS device
+# Or press 'i' for iOS Simulator (Mac only)
 ```
 
 ---

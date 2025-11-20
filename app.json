@@ -4,13 +4,13 @@
     "slug": "the-hangout",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/avatar-placeholder.png",
     "scheme": "thehangout",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/avatar-placeholder.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -18,16 +18,22 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.thehangout.app",
+      "buildNumber": "1.0.0",
+      "backgroundColor": "#000000",
+      "userInterfaceStyle": "dark",
       "infoPlist": {
         "NSCameraUsageDescription": "The Hangout needs access to your camera to capture party moments.",
         "NSPhotoLibraryUsageDescription": "The Hangout needs access to your photo library to share memories.",
         "NSLocationWhenInUseUsageDescription": "The Hangout needs your location to find nearby parties.",
-        "NSMicrophoneUsageDescription": "The Hangout needs access to your microphone for video capture."
+        "NSMicrophoneUsageDescription": "The Hangout needs access to your microphone for video capture.",
+        "UIBackgroundModes": ["location", "remote-notification"],
+        "UIRequiresFullScreen": true,
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent"
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/avatar-placeholder.png",
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.thehangout.app",
@@ -43,7 +49,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/avatar-placeholder.png"
     },
     "plugins": [
       "expo-router",
@@ -62,7 +68,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/notification-icon.png",
+          "icon": "./assets/images/avatar-placeholder.png",
           "color": "#ff6b6b"
         }
       ]
