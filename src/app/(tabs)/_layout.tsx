@@ -100,7 +100,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="passport"
         options={{
-          title: 'Passport',
+          title: 'Parties',
           tabBarIcon: ({ color, size, focused }) => (
             <View
               style={{
@@ -113,7 +113,7 @@ export default function TabLayout() {
               }}
             >
               <Ionicons
-                name={focused ? 'ticket' : 'ticket-outline'}
+                name={focused ? 'calendar' : 'calendar-outline'}
                 size={size}
                 color={color}
               />

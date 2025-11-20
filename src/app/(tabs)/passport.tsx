@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,230 +20,244 @@ import { useAuthStore } from '@/stores/authStore';
 import { usePartyStore } from '@/stores/partyStore';
 import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
+import { formatDateTime, formatRelativeTime } from '@/lib/utils';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
 export default function PassportScreen() {
   const router = useRouter();
   const { profile } = useAuthStore();
-  const { myParties, fetchMyParties } = usePartyStore();
-  const [activeTab, setActiveTab] = useState<'memories' | 'achievements'>('memories');
+  const { myParties, fetchMyParties, isLoading } = usePartyStore();
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
   useEffect(() => {
-    if (profile) {
-      fetchMyParties(profile.id);
+    if (profile?.id) {
+      loadParties();
     }
-  }, [profile]);
+  }, [profile?.id]);
 
-  const stats = [
-    {
-      icon: 'calendar',
-      value: profile?.total_parties_hosted || 12,
-      label: 'Parties Hosted',
-      color: Colors.primary,
-    },
-    {
-      icon: 'people',
-      value: profile?.total_parties_attended || 47,
-      label: 'Parties Attended',
-      color: Colors.secondary,
-    },
-    {
-      icon: 'heart',
-      value: 156,
-      label: 'Friends Made',
-      color: Colors.accent.purple,
-    },
-    {
-      icon: 'trophy',
-      value: 8,
-      label: 'Party MVP',
-      color: Colors.accent.gold,
-    },
-    {
-      icon: 'camera',
-      value: 324,
-      label: 'Photos Shared',
-      color: Colors.accent.orange,
-    },
-    {
-      icon: 'star',
-      value: '🎂',
-      label: 'Favorite Vibe',
-      color: Colors.accent.gold,
-    },
-  ];
+  const loadParties = async () => {
+    if (profile?.id) {
+      await fetchMyParties(profile.id);
+    }
+  };
 
-  // Mock memories
-  const memories = [
-    {
-      id: '1',
-      image: null,
-      title: 'Scrubb 21st Birthday',
-      badge: 'Guest',
-      badgeColor: Colors.secondary,
-      emoji: '🎂',
-    },
-    {
-      id: '2',
-      image: null,
-      title: 'House Warming Party',
-      badge: 'Host',
-      badgeColor: Colors.primary,
-      emoji: '🏠',
-    },
-  ];
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadParties();
+    setRefreshing(false);
+  };
+
+  const handleTabChange = (tab: 'upcoming' | 'past') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveTab(tab);
+  };
+
+  const handlePartyPress = (partyId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/party/${partyId}`);
+  };
+
+  const handleCreateParty = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/party/create');
+  };
+
+  const now = new Date();
+  const upcomingParties = myParties.filter(
+    (party) => new Date(party.date_time) >= now && party.status !== 'ended'
+  );
+  const pastParties = myParties.filter(
+    (party) => new Date(party.date_time) < now || party.status === 'ended'
+  );
+
+  const displayParties = activeTab === 'upcoming' ? upcomingParties : pastParties;
 
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text variant="h2" weight="black" style={styles.headerTitle}>
+              My Parties
+            </Text>
+            <Text variant="caption" color="secondary">
+              Manage your party schedule
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateParty}
+          >
+            <Ionicons name="add" size={24} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text variant="h2" weight="black" style={styles.headerTitle}>
-              Party Resume
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-              <Avatar source={profile?.avatar_url} name={profile?.display_name} size="sm" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Profile Section */}
-          <View style={styles.profileSection}>
-            <Avatar
-              source={profile?.avatar_url}
-              name={profile?.display_name}
-              size="2xl"
-              gradient
-              style={styles.avatar}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
             />
-
-            <Text variant="h2" weight="bold" center style={styles.displayName}>
-              {profile?.display_name || 'Alex Chen'}
-            </Text>
-
-            <Text variant="body" center color="secondary" style={styles.bio}>
-              {profile?.bio || 'Party enthusiast • Social connector • Memory maker'}
-            </Text>
-          </View>
-
-          {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            {stats.map((stat, index) => (
-              <Card key={index} variant="default" style={styles.statCard}>
-                <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
-                  {typeof stat.value === 'string' ? (
-                    <Text variant="h3">{stat.value}</Text>
-                  ) : (
-                    <Ionicons name={stat.icon as any} size={24} color={stat.color} />
-                  )}
-                </View>
-
-                <Text variant="h3" weight="bold" center style={styles.statValue}>
-                  {stat.value}
-                </Text>
-
-                <Text variant="caption" center color="secondary" style={styles.statLabel}>
-                  {stat.label}
-                </Text>
-              </Card>
-            ))}
-          </View>
-
+          }
+        >
           {/* Tabs */}
           <View style={styles.tabs}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'memories' && styles.tabActive]}
-              onPress={() => setActiveTab('memories')}
+              style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}
+              onPress={() => handleTabChange('upcoming')}
             >
               <Text
                 variant="body"
                 weight="semibold"
-                color={activeTab === 'memories' ? 'white' : 'secondary'}
+                color={activeTab === 'upcoming' ? 'white' : 'secondary'}
               >
-                Memories
+                Upcoming ({upcomingParties.length})
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'achievements' && styles.tabActive]}
-              onPress={() => setActiveTab('achievements')}
+              style={[styles.tab, activeTab === 'past' && styles.tabActive]}
+              onPress={() => handleTabChange('past')}
             >
               <Text
                 variant="body"
                 weight="semibold"
-                color={activeTab === 'achievements' ? 'white' : 'secondary'}
+                color={activeTab === 'past' ? 'white' : 'secondary'}
               >
-                Achievements
+                Past ({pastParties.length})
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          {activeTab === 'memories' ? (
-            <View style={styles.section}>
-              <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                Recent Party Memories
+          {/* Parties List */}
+          {isLoading && displayParties.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+          ) : displayParties.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name={activeTab === 'upcoming' ? 'calendar-outline' : 'time-outline'}
+                size={64}
+                color={Colors.text.tertiary}
+              />
+              <Text variant="h3" weight="bold" center style={styles.emptyTitle}>
+                {activeTab === 'upcoming' ? 'No Upcoming Parties' : 'No Past Parties'}
               </Text>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.memoriesScroll}
-              >
-                {memories.map((memory) => (
-                  <TouchableOpacity
-                    key={memory.id}
-                    style={styles.memoryCard}
-                    onPress={() => {/* TODO: Open memory detail */}}
-                  >
-                    <LinearGradient
-                      colors={['rgba(26, 26, 26, 0.9)', 'rgba(26, 26, 26, 0.7)']}
-                      style={styles.memoryGradient}
-                    >
-                      <View style={styles.memoryTop}>
-                        <Text variant="h2" style={styles.memoryEmoji}>
-                          {memory.emoji}
-                        </Text>
-                        <View style={[styles.memoryBadge, { backgroundColor: memory.badgeColor }]}>
-                          <Text variant="label" color="white" style={styles.memoryBadgeText}>
-                            {memory.badge}
-                          </Text>
-                        </View>
-                      </View>
-                    </LinearGradient>
-
-                    <View style={styles.memoryTitle}>
-                      <Text variant="caption" weight="medium" numberOfLines={2} color="white">
-                        {memory.title}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <Text variant="body" center color="secondary" style={styles.emptyText}>
+                {activeTab === 'upcoming'
+                  ? 'Create your first party and start the fun!'
+                  : 'Your past party memories will appear here'}
+              </Text>
+              {activeTab === 'upcoming' && (
+                <Button
+                  onPress={handleCreateParty}
+                  variant="primary"
+                  size="large"
+                  fullWidth
+                  gradient
+                  style={styles.emptyButton}
+                >
+                  Create Party
+                </Button>
+              )}
             </View>
           ) : (
-            <View style={styles.section}>
-              <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                Your Achievements
-              </Text>
+            <View style={styles.partiesList}>
+              {displayParties.map((party) => {
+                const isHost = party.host_id === profile?.id;
+                const partyDate = new Date(party.date_time);
+                const isToday = partyDate.toDateString() === now.toDateString();
+                const isHappening = party.status === 'happening';
 
-              <View style={styles.achievementsGrid}>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card key={i} variant="glass" style={styles.achievementCard}>
-                    <Text variant="h2" style={styles.achievementIcon}>
-                      🏆
-                    </Text>
-                    <Text variant="caption" center weight="medium" numberOfLines={2}>
-                      Party Starter
-                    </Text>
-                  </Card>
-                ))}
-              </View>
+                return (
+                  <TouchableOpacity
+                    key={party.id}
+                    style={styles.partyCard}
+                    onPress={() => handlePartyPress(party.id)}
+                  >
+                    <Card variant="glass" style={styles.card}>
+                      <View style={styles.partyContent}>
+                        {/* Party Image/Emoji */}
+                        {party.cover_image_url ? (
+                          <View style={styles.partyImage} />
+                        ) : (
+                          <LinearGradient
+                            colors={isHost ? Gradients.primary : Gradients.secondary}
+                            style={styles.partyImagePlaceholder}
+                          >
+                            <Text variant="h1" style={styles.partyEmoji}>
+                              {isHost ? '🎉' : '🎊'}
+                            </Text>
+                          </LinearGradient>
+                        )}
+
+                        {/* Party Info */}
+                        <View style={styles.partyInfo}>
+                          <View style={styles.partyHeader}>
+                            <View style={styles.partyTitleRow}>
+                              <Text variant="body" weight="bold" numberOfLines={1} style={styles.partyName}>
+                                {party.name}
+                              </Text>
+                              {isHappening && (
+                                <View style={styles.liveBadge}>
+                                  <View style={styles.liveDot} />
+                                  <Text variant="label" color="white" style={styles.liveText}>
+                                    LIVE
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={[styles.roleBadge, { backgroundColor: isHost ? Colors.primary : Colors.secondary }]}>
+                              <Text variant="label" color="white" style={styles.roleText}>
+                                {isHost ? 'HOST' : 'GUEST'}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.partyMeta}>
+                            <View style={styles.metaItem}>
+                              <Ionicons name="location" size={14} color={Colors.text.tertiary} />
+                              <Text variant="caption" color="tertiary" numberOfLines={1}>
+                                {party.location_name}
+                              </Text>
+                            </View>
+                            <View style={styles.metaItem}>
+                              <Ionicons name="time" size={14} color={Colors.text.tertiary} />
+                              <Text variant="caption" color="tertiary">
+                                {isToday ? 'Today' : formatDateTime(party.date_time)}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.partyFooter}>
+                            <View style={styles.footerItem}>
+                              <Ionicons name="people" size={16} color={Colors.text.secondary} />
+                              <Text variant="caption" color="secondary">
+                                {party.max_attendees ? `${party.max_attendees} max` : 'Unlimited'}
+                              </Text>
+                            </View>
+                            <View style={styles.footerItem}>
+                              <Ionicons name="flame" size={16} color={Colors.accent.orange} />
+                              <Text variant="caption" color="secondary">
+                                {party.energy_score}% energy
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </Card>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </ScrollView>
@@ -258,6 +274,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.base,
+    marginBottom: Spacing.lg,
+  },
+  headerTitle: {
+    color: Colors.primary,
+  },
+  createButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scrollView: {
     flex: 1,
   },
@@ -265,63 +300,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing['4xl'],
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.base,
-    marginBottom: Spacing.lg,
-  },
-  headerTitle: {
-    color: Colors.primary,
-  },
-
-  // Profile Section
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: Spacing['3xl'],
-  },
-  avatar: {
-    marginBottom: Spacing.xl,
-  },
-  displayName: {
-    marginBottom: Spacing.md,
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  bio: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-
-  // Stats Grid
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  statCard: {
-    width: (width - Spacing.lg * 2 - Spacing.md * 2) / 3,
-    padding: Spacing.base,
-    alignItems: 'center',
-  },
-  statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.sm,
-  },
-  statValue: {
-    marginBottom: Spacing.xxs,
-  },
-  statLabel: {
-    fontSize: 11,
-  },
-
-  // Tabs
   tabs: {
     flexDirection: 'row',
     backgroundColor: Colors.card,
@@ -338,71 +316,118 @@ const styles = StyleSheet.create({
   tabActive: {
     backgroundColor: Colors.primary,
   },
-
-  // Section
-  section: {
+  loadingContainer: {
+    paddingVertical: Spacing['3xl'],
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: Spacing['4xl'],
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  emptyText: {
+    maxWidth: 280,
     marginBottom: Spacing.xl,
   },
-  sectionTitle: {
-    marginBottom: Spacing.lg,
+  emptyButton: {
+    maxWidth: 200,
   },
-
-  // Memories Scroll
-  memoriesScroll: {
-    paddingRight: Spacing.lg,
-  },
-  memoryCard: {
-    width: 160,
-    aspectRatio: 3 / 4,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginRight: Spacing.md,
-  },
-  memoryGradient: {
-    flex: 1,
-  },
-  memoryTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: Spacing.md,
-  },
-  memoryEmoji: {
-    fontSize: 24,
-  },
-  memoryBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  memoryBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  memoryTitle: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: Spacing.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  },
-
-  // Achievements Grid
-  achievementsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  partiesList: {
     gap: Spacing.md,
   },
-  achievementCard: {
-    width: (width - Spacing.lg * 2 - Spacing.md * 2) / 3,
-    aspectRatio: 1,
-    padding: Spacing.md,
+  partyCard: {
+    marginBottom: Spacing.md,
+  },
+  card: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  partyContent: {
+    flexDirection: 'row',
+  },
+  partyImage: {
+    width: 100,
+    height: 100,
+    backgroundColor: Colors.surface,
+  },
+  partyImagePlaceholder: {
+    width: 100,
+    height: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  achievementIcon: {
-    fontSize: 32,
+  partyEmoji: {
+    fontSize: 40,
+  },
+  partyInfo: {
+    flex: 1,
+    padding: Spacing.md,
+    justifyContent: 'space-between',
+  },
+  partyHeader: {
     marginBottom: Spacing.sm,
+  },
+  partyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xs,
+  },
+  partyName: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.live,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xxs,
+    borderRadius: BorderRadius.sm,
+    gap: Spacing.xs,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.white,
+  },
+  liveText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  roleBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xxs,
+    borderRadius: BorderRadius.xs,
+    alignSelf: 'flex-start',
+  },
+  roleText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  partyMeta: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  partyFooter: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.default,
+  },
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
 });
