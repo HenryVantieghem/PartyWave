@@ -1,9 +1,9 @@
 # 🚀 The Hangout - Execution Roadmap
 
 **Last Updated**: 2025-11-22
-**Overall Progress**: 32% Complete
+**Overall Progress**: 35% Complete
 **Current Phase**: Phase 3 - Crew Features
-**Status**: ✅ Phase 1 & 2 COMPLETE | 🎯 Phase 3 In Progress (22%)
+**Status**: ✅ Phase 1 & 2 COMPLETE | 🎯 Phase 3 In Progress (33%)
 
 ---
 
@@ -12,16 +12,16 @@
 ```
 Phase 1: Foundation               ██████████ 100% (12/12 tasks) ✅ COMPLETE
 Phase 2: Party Creation Overhaul  ██████████ 100% (9/9 tasks)  ✅ COMPLETE
-Phase 3: Crew Features            ██░░░░░░░░  22% (2/9 tasks)  🔄 CURRENT
+Phase 3: Crew Features            ███░░░░░░░  33% (3/9 tasks)  🔄 CURRENT
 Phase 4: Advanced Features        ░░░░░░░░░░   0% (0/9 tasks)
 Phase 5: Polish & Optimization    ░░░░░░░░░░   0% (0/11 tasks)
 Phase 6: Pre-Launch               ░░░░░░░░░░   0% (0/10 tasks)
 Phase 7: Launch                   ░░░░░░░░░░   0% (0/9 tasks)
 ───────────────────────────────────────────────
-TOTAL:                            ███░░░░░░░  32% (23/72 tasks)
+TOTAL:                            ████░░░░░░  35% (24/72 tasks)
 ```
 
-**Current Status**: ✅ Phase 1 & 2 COMPLETE | 🔄 Phase 3 In Progress | 🎯 Real-time Crew Activity & Quick Plans Live
+**Current Status**: ✅ Phase 1 & 2 COMPLETE | 🔄 Phase 3 In Progress | 🎯 Crew Discovery, Real-time Activity & Quick Plans Live
 
 ---
 
@@ -1661,15 +1661,15 @@ const styles = StyleSheet.create({
 ## 📋 PHASE 3: Crew Features (Weeks 3-4)
 
 **Goal**: Full crew functionality and engagement
-**Status**: 🔄 IN_PROGRESS (22% complete - 2/9 tasks)
+**Status**: 🔄 IN_PROGRESS (33% complete - 3/9 tasks)
 **Dependencies**: Phase 1 & 2 must be complete ✅
 
 ### Tasks Overview
 
 - **P3-T01**: Crew Activity Feed Real-time ✅ COMPLETE
 - **P3-T02**: Quick Plans Polling System ✅ COMPLETE
-- **P3-T03**: Crew Discovery Algorithm ⏳ NEXT
-- **P3-T04**: Crew Search & Filtering
+- **P3-T03**: Crew Discovery Algorithm ✅ COMPLETE
+- **P3-T04**: Crew Search & Filtering ⏳ NEXT
 - **P3-T05**: Crew Settings & Management
 - **P3-T06**: Notification System
 - **P3-T07**: Member Management Advanced
@@ -1708,6 +1708,28 @@ const styles = StyleSheet.create({
 **Files Modified**:
 - src/stores/partyStore.ts - Added subscribeToQuickPlans() with dual-channel subscription
 - src/app/crew/[id]/quick-plans.tsx - Integrated real-time subscriptions, fixed type errors
+
+---
+
+#### Task P3-T03: Crew Discovery Algorithm
+**Status**: ✅ COMPLETED
+**Completed**: 2025-11-22
+**Commit**: 35f6dc9
+
+**Summary**: Implemented comprehensive crew discovery algorithm with location-based matching, interest-based scoring, and friend-of-friend mutual member detection.
+
+**Features**:
+- 📍 Location-based matching (25 points) - exact and nearby
+- ⭐ Reputation scoring (20 points) - prioritizes quality crews
+- 👥 Community size optimization (15 points) - active communities
+- 📊 Similar size matching (10 points) - personalized to user
+- 🌐 Crew type preference (15 points) - matches user style
+- 🤝 Mutual members detection (30 points) - friend-of-friend
+- 🎲 Freshness factor (5 points) - prevents stale results
+
+**Files Modified**:
+- src/stores/crewStore.ts - Added discoverCrews() with 7-factor scoring algorithm
+- src/app/crew/discover.tsx - Refactored to use store function, removed inline logic
 
 ---
 
