@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+import { logError, getErrorMessage, showError } from '@/utils/errorHandling';
 import type {
   Crew,
   CrewMember,
@@ -369,8 +370,10 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
       set({ loading: false });
       return crew;
     } catch (error: any) {
-      console.error('Error creating crew:', error);
-      set({ error: error.message, loading: false });
+      logError(error, 'createCrew');
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage, loading: false });
+      showError(error, 'Create Crew Failed');
       return null;
     }
   },
@@ -452,8 +455,10 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
         invitee_id: userId,
       });
     } catch (error: any) {
-      console.error('Error inviting to crew:', error);
-      set({ error: error.message });
+      logError(error, 'inviteToCrew');
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage });
+      throw error; // Re-throw so UI can handle it
     }
   },
 

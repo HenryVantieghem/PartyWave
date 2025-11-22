@@ -114,6 +114,12 @@ export default function CrewDetailScreen() {
     router.push(`/crew/settings/${id}`);
   };
 
+  const handleInvite = () => {
+    if (!id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/crew/invite/${id}`);
+  };
+
   const userRole = crewMembers[id || '']?.find(m => m.user_id === user?.id)?.role;
   const canManageCrew = userRole === 'owner' || userRole === 'admin';
 
@@ -192,9 +198,23 @@ export default function CrewDetailScreen() {
 
         {/* Members List */}
         <View style={styles.membersSection}>
-          <Text style={styles.sectionTitle}>
-            Members ({currentCrew.members?.length || 0})
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Members ({currentCrew.members?.length || 0})
+            </Text>
+            {canManageCrew && (
+              <Pressable
+                onPress={handleInvite}
+                style={({ pressed }) => [
+                  styles.inviteButton,
+                  pressed && styles.inviteButtonPressed,
+                ]}
+              >
+                <Ionicons name="person-add" size={18} color={Colors.primary} />
+                <Text style={styles.inviteButtonText}>Invite</Text>
+              </Pressable>
+            )}
+          </View>
           {currentCrew.members?.map((member) => (
             <CrewMemberItem
               key={member.id}
@@ -299,11 +319,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xl,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: Colors.white,
-    marginBottom: Spacing.md,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(255, 75, 110, 0.15)',
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  inviteButtonPressed: {
+    opacity: 0.7,
+  },
+  inviteButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary,
   },
   loadingContainer: {
     flex: 1,

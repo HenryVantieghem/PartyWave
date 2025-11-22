@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/stores/authStore';
-import { Colors } from '@/constants/colors';
+import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -216,15 +216,50 @@ export default function CameraScreen() {
               <Ionicons name="images-outline" size={28} color={Colors.white} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={takePicture}
-              disabled={isCapturing}
-            >
-              <View style={styles.captureButtonOuter}>
-                <View style={styles.captureButtonInner} />
-              </View>
-            </TouchableOpacity>
+            <View style={styles.captureContainer}>
+              <TouchableOpacity
+                style={styles.captureButton}
+                onPress={takePicture}
+                disabled={isCapturing}
+              >
+                <View style={styles.captureButtonOuter}>
+                  <View style={styles.captureButtonInner} />
+                </View>
+              </TouchableOpacity>
+
+              {/* Quick Create Party Hint */}
+              <TouchableOpacity
+                style={styles.quickPartyButton}
+                onPress={async () => {
+                  if (!cameraRef.current || isCapturing) return;
+                  try {
+                    setIsCapturing(true);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    const photo = await cameraRef.current.takePictureAsync({
+                      quality: 0.8,
+                      base64: false,
+                    });
+                    if (photo) {
+                      router.push({
+                        pathname: '/camera/party-preview' as any,
+                        params: { uri: photo.uri },
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error:', error);
+                  } finally {
+                    setIsCapturing(false);
+                  }
+                }}
+              >
+                <LinearGradient colors={Gradients.party} style={styles.quickPartyGradient}>
+                  <Ionicons name="rocket" size={16} color={Colors.white} />
+                  <Text variant="caption" weight="bold" color="white" style={{ marginLeft: 4 }}>
+                    Quick Party
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.sideButton}
@@ -351,6 +386,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  captureContainer: {
+    alignItems: 'center',
+  },
   captureButton: {
     width: 80,
     height: 80,
@@ -371,5 +409,21 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: Colors.white,
+  },
+  quickPartyButton: {
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  quickPartyGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
 });

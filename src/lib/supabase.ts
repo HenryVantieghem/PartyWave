@@ -51,6 +51,17 @@ export type Party = {
   is_private: boolean;
   created_at: string;
   host?: Profile;
+
+  // Phase 2 additions
+  creation_mode?: 'quick' | 'planned';
+  vibe_tags?: string[];
+  energy_level?: number;
+  cover_photo_url?: string;
+  capacity?: number;
+  rsvp_deadline?: string;
+  crew_id?: string;
+  template_id?: string;
+  quick_create_metadata?: Record<string, any>;
 };
 
 export type PartyAttendee = {

@@ -112,13 +112,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="crew"
         options={{
-          title: 'Messages',
+          title: 'Crew',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
               <Ionicons
-                name={focused ? "search" : "search-outline"}
+                name={focused ? "people" : "people-outline"}
                 size={26}
                 color={focused ? Colors.primary : Colors.text.secondary}
               />
@@ -127,9 +127,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="crew"
+        name="messages"
         options={{
-          href: null, // Hide from tab bar but keep route accessible
+          href: null, // Hide messages tab - replaced by Crew
         }}
       />
       <Tabs.Screen

@@ -32,6 +32,9 @@ export default function CreatePartyScreen() {
   const { createParty, isLoading } = usePartyStore();
   const { profile } = useAuthStore();
 
+  // Mode selector - Quick vs Planned
+  const [showModeSelector, setShowModeSelector] = useState(true);
+
   // Form state
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -218,6 +221,85 @@ export default function CreatePartyScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Mode Selector Modal */}
+      {showModeSelector && (
+        <View style={styles.modeSelectorOverlay}>
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+          <SafeAreaView style={styles.modeSelectorContainer}>
+            <View style={styles.modeSelectorContent}>
+              <Text variant="h2" weight="bold" center style={{ marginBottom: Spacing.sm }}>
+                Create Party
+              </Text>
+              <Text variant="body" color="secondary" center style={{ marginBottom: Spacing['2xl'] }}>
+                Choose your creation mode
+              </Text>
+
+              {/* Quick Create Option */}
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.replace('/party/quick-create');
+                }}
+                style={styles.modeOption}
+                activeOpacity={0.8}
+              >
+                <LinearGradient colors={Gradients.party} style={styles.modeGradient}>
+                  <View style={styles.modeIcon}>
+                    <Ionicons name="flash" size={32} color={Colors.white} />
+                  </View>
+                  <View style={styles.modeInfo}>
+                    <Text variant="h3" weight="bold" color="white">
+                      Quick Create
+                    </Text>
+                    <Text variant="body" color="white" style={{ opacity: 0.9, marginTop: 4 }}>
+                      Party ready in under 15 seconds
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color={Colors.white} />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Planned Party Option */}
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowModeSelector(false);
+                }}
+                style={styles.modeOption}
+                activeOpacity={0.8}
+              >
+                <Card variant="liquid" style={styles.modeCard}>
+                  <View style={styles.modeIcon}>
+                    <LinearGradient colors={Gradients.party} style={styles.modeIconGradient}>
+                      <Ionicons name="calendar" size={28} color={Colors.white} />
+                    </LinearGradient>
+                  </View>
+                  <View style={styles.modeInfo}>
+                    <Text variant="h3" weight="bold">
+                      Planned Party
+                    </Text>
+                    <Text variant="body" color="secondary" style={{ marginTop: 4 }}>
+                      Full wizard with all features
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color={Colors.text.tertiary} />
+                </Card>
+              </TouchableOpacity>
+
+              {/* Close Button */}
+              <TouchableOpacity
+                onPress={handleBack}
+                style={styles.modeSelectorClose}
+              >
+                <Text variant="body" color="secondary">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </View>
+      )}
+
       {/* Header */}
       <BlurView intensity={80} tint="dark" style={styles.header}>
         <SafeAreaView edges={['top']}>
@@ -763,5 +845,64 @@ const styles = StyleSheet.create({
   picker: {
     width: '100%',
     height: 200,
+  },
+
+  // Mode Selector
+  modeSelectorOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  modeSelectorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  modeSelectorContent: {
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  modeOption: {
+    marginBottom: Spacing.base,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.lg,
+  },
+  modeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modeIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.base,
+  },
+  modeIconGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeInfo: {
+    flex: 1,
+  },
+  modeSelectorClose: {
+    alignSelf: 'center',
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
   },
 });

@@ -537,6 +537,20 @@ export default function DiscoverScreen() {
             </View>
           )}
         </ScrollView>
+
+        {/* Floating Quick Create Button */}
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push('/party/quick-create');
+          }}
+          activeOpacity={0.9}
+        >
+          <LinearGradient colors={Gradients.party} style={styles.fabGradient}>
+            <Ionicons name="add" size={28} color={Colors.white} />
+          </LinearGradient>
+        </TouchableOpacity>
       </SafeAreaView>
     </View>
   );
@@ -854,5 +868,27 @@ const styles = StyleSheet.create({
   },
   emptyAction: {
     padding: Spacing.base,
+  },
+
+  // Floating Action Button
+  fab: {
+    position: 'absolute',
+    bottom: Spacing['2xl'],
+    right: Spacing.lg,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  fabGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
