@@ -30,11 +30,23 @@ const HEADER_HEIGHT = SCREEN_HEIGHT * 0.4;
 export default function PartyDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentParty, attendees, isLoading, fetchPartyById, fetchAttendees, joinParty, checkIn } = usePartyStore();
+  const {
+    currentParty,
+    attendees,
+    coHosts,
+    isLoading,
+    fetchPartyById,
+    fetchAttendees,
+    fetchCoHosts,
+    joinParty,
+    checkIn
+  } = usePartyStore();
   const { profile } = useAuthStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+
+  const partyCoHosts = id ? coHosts[id] || [] : [];
 
   useEffect(() => {
     if (id) {
@@ -46,6 +58,7 @@ export default function PartyDetailScreen() {
     if (!id) return;
     await fetchPartyById(id);
     await fetchAttendees(id);
+    await fetchCoHosts(id);
   };
 
   const onRefresh = async () => {

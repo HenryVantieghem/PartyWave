@@ -49,6 +49,9 @@ export default function QuickCreatePartyScreen() {
   const [coverPhoto, setCoverPhoto] = useState<string | null>(
     (params.photoUri as string) || null
   );
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | undefined>(
+    (params.imageUrl as string) || undefined
+  );
   const [name, setName] = useState((params.name as string) || '');
   const [locationName, setLocationName] = useState((params.location as string) || '');
   const [dateTime, setDateTime] = useState(() => {
@@ -59,34 +62,44 @@ export default function QuickCreatePartyScreen() {
     return now;
   });
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedVibes, setSelectedVibes] = useState<VibeTag[]>([
-    (params.vibe as VibeTag) || 'lit',
-  ]);
+  const [selectedVibes, setSelectedVibes] = useState<VibeTag[]>(() => {
+    // Parse vibes from params if available
+    if (params.vibes) {
+      const vibesStr = typeof params.vibes === 'string' ? params.vibes : params.vibes[0];
+      return vibesStr.split(',').filter(Boolean) as VibeTag[];
+    }
+    return [(params.vibe as VibeTag) || 'lit'];
+  });
   const [energyLevel, setEnergyLevel] = useState(75);
+
+  // Update cover photo when returning from camera
+  React.useEffect(() => {
+    if (params.photoUri) {
+      setCoverPhoto(params.photoUri as string);
+    }
+    if (params.imageUrl) {
+      setCoverPhotoUrl(params.imageUrl as string);
+    }
+    if (params.vibes) {
+      const vibesStr = typeof params.vibes === 'string' ? params.vibes : params.vibes[0];
+      setSelectedVibes(vibesStr.split(',').filter(Boolean) as VibeTag[]);
+    }
+  }, [params.photoUri, params.imageUrl, params.vibes]);
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
-  const handleTakePhoto = async () => {
+  const handleTakePhoto = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow camera access');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
+    // Navigate to camera screen with selected vibes
+    router.push({
+      pathname: '/party/camera',
+      params: {
+        vibes: selectedVibes.join(','),
+      },
     });
-
-    if (!result.canceled && result.assets[0]) {
-      setCoverPhoto(result.assets[0].uri);
-    }
   };
 
   const toggleVibe = (vibe: VibeTag) => {
@@ -134,10 +147,11 @@ export default function QuickCreatePartyScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      let coverPhotoUrl: string | undefined = undefined;
+      // Use uploaded URL if available, otherwise upload now
+      let finalCoverPhotoUrl: string | undefined = coverPhotoUrl;
 
-      // Upload cover photo if provided
-      if (coverPhoto) {
+      // Upload cover photo if we have local URI but no URL yet
+      if (coverPhoto && !finalCoverPhotoUrl) {
         try {
           const { supabase } = await import('@/lib/supabase');
           const fileName = `${profile.id}/${Date.now()}.jpg`;
@@ -158,7 +172,7 @@ export default function QuickCreatePartyScreen() {
             data: { publicUrl },
           } = supabase.storage.from('party-covers').getPublicUrl(fileName);
 
-          coverPhotoUrl = publicUrl;
+          finalCoverPhotoUrl = publicUrl;
         } catch (uploadError: any) {
           console.error('Image upload error:', uploadError);
           // Continue without cover photo if upload fails
@@ -170,7 +184,7 @@ export default function QuickCreatePartyScreen() {
         date_time: dateTime.toISOString(),
         location_name: locationName.trim(),
         description: `Quick party at ${locationName.trim()}`,
-        cover_photo_url: coverPhotoUrl,
+        cover_photo_url: finalCoverPhotoUrl,
         vibe_tags: selectedVibes,
         energy_level: energyLevel,
         quick_create_metadata: {

@@ -64,6 +64,10 @@ type PartyState = {
   // Phase 2 Actions - Dual-Mode Creation
   createQuickParty: (data: CreateQuickPartyInput) => Promise<Party | null>;
   createPlannedParty: (data: CreatePlannedPartyInput) => Promise<Party | null>;
+  createQuickPartyWithPhoto: (
+    partyData: CreateQuickPartyInput,
+    imageUri: string
+  ) => Promise<Party | null>;
 
   // Phase 2 Actions - Co-Hosts
   addCoHost: (data: CreateCoHostInput) => Promise<boolean>;
@@ -558,6 +562,35 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       return party;
     } catch (error: any) {
       logError(error, 'createQuickParty');
+      set({ error: getErrorMessage(error), isLoading: false });
+      showError(error, 'Quick Party Creation Failed');
+      return null;
+    }
+  },
+
+  // Create quick party with photo upload
+  createQuickPartyWithPhoto: async (partyData, imageUri) => {
+    try {
+      set({ isLoading: true, error: null });
+
+      // Upload image first
+      const { uploadToSupabase } = await import('@/lib/camera');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const filename = `party_cover_${Date.now()}.jpg`;
+      const imageUrl = await uploadToSupabase(imageUri, filename);
+
+      // Create party with uploaded image URL
+      const party = await get().createQuickParty({
+        ...partyData,
+        cover_photo_url: imageUrl,
+      });
+
+      set({ isLoading: false });
+      return party;
+    } catch (error: any) {
+      logError(error, 'createQuickPartyWithPhoto');
       set({ error: getErrorMessage(error), isLoading: false });
       showError(error, 'Quick Party Creation Failed');
       return null;

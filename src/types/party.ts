@@ -290,3 +290,26 @@ export interface PartyPermissions {
   can_manage_coHosts: boolean;
   role: 'owner' | 'co-host' | 'attendee' | 'viewer';
 }
+
+// ============================================
+// CAMERA TYPES
+// ============================================
+
+export interface CameraState {
+  capturedPhotoUri: string | null;
+  cropData: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
+  uploadProgress: number; // 0-100
+  isUploading: boolean;
+  error: string | null;
+}
+
+export interface QuickPartyWithPhoto {
+  partyData: CreateQuickPartyInput;
+  imageUri: string;
+  imageUrl?: string; // After upload
+}
