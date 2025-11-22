@@ -5,6 +5,9 @@
 
 import { Colors, Gradients } from './colors';
 
+// Re-export Colors and Gradients
+export { Colors, Gradients };
+
 // Spacing System (8px base grid)
 export const Spacing = {
   xxs: 2,

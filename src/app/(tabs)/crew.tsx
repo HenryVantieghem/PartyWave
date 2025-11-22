@@ -1,443 +1,172 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Dimensions,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+// ============================================
+// CREW TAB - PARTY CREWS SYSTEM
+// ============================================
+// Main crew management screen
+// ============================================
+
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { Avatar } from '@/components/ui/Avatar';
-import { useAuthStore } from '@/stores/authStore';
-import { useUserStore } from '@/stores/userStore';
-import { useUIStore } from '@/stores/uiStore';
-import { Colors } from '@/constants/colors';
-import { Spacing, BorderRadius } from '@/constants/theme';
-import { formatRelativeTime } from '@/lib/utils';
+import { useCrewStore } from '@/stores/crewStore';
+import { CrewCard } from '@/components/crew/CrewCard';
+import { CrewInviteCard } from '@/components/crew/CrewInviteCard';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 
-const { width } = Dimensions.get('window');
-
 export default function CrewScreen() {
-  const router = useRouter();
-  const { profile, user } = useAuthStore();
   const {
-    connections,
-    users,
-    pendingRequests,
-    isLoading,
-    fetchConnections,
-    fetchPendingRequests,
-    searchUsers,
-    sendConnectionRequest,
-    acceptConnectionRequest,
-    removeConnection,
-  } = useUserStore();
-  const { showToast } = useUIStore();
-  const [activeTab, setActiveTab] = useState<'crew' | 'suggestions'>('crew');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+    myCrews,
+    pendingInvites,
+    loading,
+    fetchMyCrews,
+    fetchPendingInvites,
+    respondToInvite,
+  } = useCrewStore();
+
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (profile?.id) {
-      fetchConnections(profile.id);
-      fetchPendingRequests(profile.id);
-    }
-  }, [profile?.id]);
+    loadData();
+  }, []);
 
-  useEffect(() => {
-    if (searchQuery.length > 2) {
-      handleSearch();
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
-
-  const handleSearch = async () => {
-    if (!profile?.id) return;
-    setIsSearching(true);
-    try {
-      const results = await searchUsers(searchQuery);
-      const filtered = results.filter(
-        (u) =>
-          u.id !== profile.id &&
-          !connections.some((c) => c.friend_id === u.id)
-      );
-      setSearchResults(filtered);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
+  const loadData = async () => {
+    await Promise.all([
+      fetchMyCrews(),
+      fetchPendingInvites(),
+    ]);
   };
 
-  const handleTabChange = (tab: 'crew' | 'suggestions') => {
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const handleAcceptInvite = async (inviteId: string) => {
+    await respondToInvite(inviteId, true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    await respondToInvite(inviteId, false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActiveTab(tab);
   };
 
-  const handleAddFriend = async (friendId: string) => {
-    if (!profile?.id) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await sendConnectionRequest(profile.id, friendId);
-      showToast('Friend request sent!', 'success');
-      setSearchResults(searchResults.filter((u) => u.id !== friendId));
-    } catch (error: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast(error.message || 'Failed to send request', 'error');
-    }
-  };
-
-  const handleAcceptRequest = async (connectionId: string) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await acceptConnectionRequest(connectionId);
-      showToast('Friend request accepted!', 'success');
-      if (profile?.id) {
-        fetchConnections(profile.id);
-        fetchPendingRequests(profile.id);
-      }
-    } catch (error: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast(error.message || 'Failed to accept request', 'error');
-    }
-  };
-
-  const handleInviteToParty = (friendId: string) => {
+  const handleCreateCrew = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/party/create');
+    router.push('/crew/create');
   };
 
-  // Calculate stats matching screenshot exactly
-  const totalConnections = connections.length;
-  const partyBFFs = connections.filter((c) => (c.friend?.party_score || 0) > 100).length;
-  // Calculate new connections this month
-  const now = new Date();
-  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const newThisMonth = connections.filter((c) => {
-    if (!c.created_at) return false;
-    const createdAt = new Date(c.created_at);
-    return createdAt >= thisMonth;
-  }).length;
-
-  const stats = [
-    { 
-      icon: 'people', 
-      value: totalConnections, 
-      label: 'Friends',
-      color: Colors.primary,
-    },
-    { 
-      icon: 'star-outline', 
-      value: partyBFFs, 
-      label: 'Party BFFs',
-      color: Colors.accent.gold,
-    },
-    { 
-      icon: 'heart-outline', 
-      value: newThisMonth, 
-      label: 'New This Month',
-      color: Colors.accent.purple,
-    },
-  ];
-
-  // Get friend title with emoji matching screenshot
-  const getFriendTitle = (friend: any) => {
-    if (friend.party_score > 100) return { title: 'Party Legend', icon: '🎊', color: Colors.accent.gold };
-    if (friend.total_parties_hosted > 10) return { title: 'Host Master', icon: '🎩', color: Colors.text.secondary };
-    if (friend.total_parties_attended > 20) return { title: 'Memory Maker', icon: '📸', color: Colors.accent.blue };
-    return { title: 'Party Friend', icon: '👥', color: Colors.text.secondary };
-  };
-
-  // Calculate last partied time
-  const getLastPartied = (friend: any) => {
-    // Mock for now - would come from actual party attendance data
-    const daysAgo = Math.floor(Math.random() * 14) + 1;
-    if (daysAgo === 1) return '1 day ago';
-    return `${daysAgo} days ago`;
+  const handleCrewPress = (crewId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/crew/${crewId}`);
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text variant="h2" weight="black" style={styles.headerTitle}>
-            Party Crew
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar style="light" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Crews</Text>
+          <Text style={styles.subtitle}>
+            Your party squads
           </Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-            <Avatar source={profile?.avatar_url} name={profile?.display_name} size="sm" />
-          </TouchableOpacity>
         </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+        <Pressable
+          onPress={handleCreateCrew}
+          style={({ pressed }) => [
+            styles.createButton,
+            pressed && styles.createButtonPressed,
+          ]}
         >
-          {/* Search Bar */}
-          <Card variant="liquid" style={styles.searchCard}>
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color={Colors.text.tertiary} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search your party crew..."
-                placeholderTextColor={Colors.text.tertiary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
-          </Card>
+          <Ionicons name="add" size={24} color={Colors.white} />
+        </Pressable>
+      </View>
 
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            {stats.map((stat, index) => (
-              <Card key={index} variant="liquid" style={styles.statItem}>
-                <Ionicons 
-                  name={stat.icon as any} 
-                  size={24} 
-                  color={stat.color}
-                  style={styles.statIcon}
+      {/* Pending Invites Section */}
+      {pendingInvites.length > 0 && (
+        <View style={styles.invitesSection}>
+          <Text style={styles.sectionTitle}>
+            Pending Invites ({pendingInvites.length})
+          </Text>
+          <FlatList
+            data={pendingInvites}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.inviteCardContainer}>
+                <CrewInviteCard
+                  invite={item}
+                  onAccept={handleAcceptInvite}
+                  onDecline={handleDeclineInvite}
                 />
-                <Text variant="h3" weight="bold" center style={styles.statValue}>
-                  {stat.value}
-                </Text>
-                <Text variant="caption" center color="secondary" style={styles.statLabel}>
-                  {stat.label}
-                </Text>
-              </Card>
-            ))}
+              </View>
+            )}
+            contentContainerStyle={styles.invitesList}
+          />
+        </View>
+      )}
+
+      {/* My Crews List */}
+      <View style={styles.content}>
+        {loading && myCrews.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Loading crews...</Text>
           </View>
-
-          {/* Segmented Control */}
-          <Card variant="liquid" style={styles.segmentedControlCard}>
-            <View style={styles.segmentedControl}>
-              <TouchableOpacity
-                style={[styles.segment, activeTab === 'crew' && styles.segmentActive]}
-                onPress={() => handleTabChange('crew')}
-              >
-                <Text
-                  variant="body"
-                  weight="semibold"
-                  color={activeTab === 'crew' ? 'white' : 'secondary'}
-                >
-                  My Crew
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.segment, activeTab === 'suggestions' && styles.segmentActive]}
-                onPress={() => handleTabChange('suggestions')}
-              >
-                <Text
-                  variant="body"
-                  weight="semibold"
-                  color={activeTab === 'suggestions' ? 'white' : 'secondary'}
-                >
-                  Suggestions
-                </Text>
-              </TouchableOpacity>
+        ) : myCrews.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="people-outline" size={64} color={Colors.text.secondary} />
             </View>
-          </Card>
-
-          {/* Content */}
-          {activeTab === 'crew' ? (
-            <View style={styles.content}>
-              {pendingRequests.length > 0 && (
-                <View style={styles.section}>
-                  <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                    Pending Requests
-                  </Text>
-                  {pendingRequests.map((request) => (
-                    <Card key={request.id} variant="liquid" style={styles.memberCard}>
-                      <View style={styles.memberContent}>
-                        <Avatar
-                          source={request.friend?.avatar_url}
-                          name={request.friend?.display_name}
-                          size="lg"
-                          gradient
-                        />
-                        <View style={styles.memberInfo}>
-                          <Text variant="body" weight="bold" style={styles.memberName}>
-                            {request.friend?.display_name}
-                          </Text>
-                          <Text variant="caption" color="secondary" style={styles.memberUsername}>
-                            @{request.friend?.username}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.acceptButton}
-                          onPress={() => handleAcceptRequest(request.id)}
-                        >
-                          <Text variant="label" color="white" weight="semibold">
-                            Accept
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </Card>
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.sectionHeader}>
-                <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                  Your Party Crew
-                </Text>
-                <Text variant="caption" color="tertiary" style={styles.sectionSubtitle}>
-                  Friends you party with most
-                </Text>
-              </View>
-
-              {isLoading && connections.length === 0 ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                </View>
-              ) : connections.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="people-outline" size={48} color={Colors.text.tertiary} />
-                  <Text variant="body" center color="secondary" style={styles.emptyText}>
-                    No friends yet. Start adding people to build your crew!
-                  </Text>
-                </View>
-              ) : (
-                connections.map((connection) => {
-                  const friend = connection.friend;
-                  if (!friend) return null;
-                  const titleInfo = getFriendTitle(friend);
-                  const isBFF = friend.party_score > 100;
-                  const lastPartied = getLastPartied(friend);
-                  const partyCount = friend.total_parties_attended || 0;
-                  const energyScore = friend.party_score || 0;
-
-                  return (
-                    <Card key={connection.id} variant="liquid" style={styles.memberCard}>
-                      <View style={styles.memberContent}>
-                        <View style={styles.avatarContainer}>
-                          <Avatar
-                            source={friend.avatar_url}
-                            name={friend.display_name}
-                            size="lg"
-                            gradient
-                          />
-                          {/* Online indicator */}
-                          <View style={styles.onlineIndicator} />
-                        </View>
-                        <View style={styles.memberInfo}>
-                          <View style={styles.memberHeader}>
-                            <Text variant="body" weight="bold" style={styles.memberName}>
-                              {friend.display_name}
-                            </Text>
-                            {isBFF && (
-                              <Ionicons name="star" size={16} color={Colors.accent.gold} style={styles.bffStar} />
-                            )}
-                          </View>
-                          <View style={styles.memberTitleRow}>
-                            <Text variant="caption" style={styles.titleEmoji}>
-                              {titleInfo.icon}
-                            </Text>
-                            <Text variant="caption" color="secondary" style={styles.memberTitle}>
-                              {titleInfo.title}
-                            </Text>
-                          </View>
-                          <View style={styles.memberStats}>
-                            <View style={styles.memberStatItem}>
-                              <Ionicons name="calendar-outline" size={14} color={Colors.text.tertiary} />
-                              <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                                {partyCount} parties
-                              </Text>
-                            </View>
-                            <View style={styles.memberStatItem}>
-                              <Ionicons name="flash" size={14} color={Colors.accent.orange} />
-                              <Text variant="caption" color="tertiary" style={styles.memberStatText}>
-                                {energyScore}% energy
-                              </Text>
-                            </View>
-                          </View>
-                          <Text variant="caption" color="tertiary" style={styles.lastPartied}>
-                            Last partied: {lastPartied}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.inviteButton}
-                          onPress={() => handleInviteToParty(friend.id)}
-                        >
-                          <Ionicons name="add" size={20} color={Colors.white} />
-                        </TouchableOpacity>
-                      </View>
-                    </Card>
-                  );
-                })
-              )}
-            </View>
-          ) : (
-            <View style={styles.content}>
-              <View style={styles.sectionHeader}>
-                <Text variant="h4" weight="bold" style={styles.sectionTitle}>
-                  {searchQuery.length > 2 ? 'Search Results' : 'Suggested Friends'}
-                </Text>
-                <Text variant="caption" color="tertiary" style={styles.sectionSubtitle}>
-                  {searchQuery.length > 2 ? 'Find people to add' : 'People you might know'}
-                </Text>
-              </View>
-
-              {isSearching ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                </View>
-              ) : searchResults.length === 0 && searchQuery.length > 2 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="search-outline" size={48} color={Colors.text.tertiary} />
-                  <Text variant="body" center color="secondary" style={styles.emptyText}>
-                    No users found
-                  </Text>
-                </View>
-              ) : (
-                searchResults.map((user) => (
-                  <Card key={user.id} variant="liquid" style={styles.memberCard}>
-                    <View style={styles.memberContent}>
-                      <Avatar
-                        source={user.avatar_url}
-                        name={user.display_name}
-                        size="lg"
-                        gradient
-                      />
-                      <View style={styles.memberInfo}>
-                        <Text variant="body" weight="bold" style={styles.memberName}>
-                          {user.display_name}
-                        </Text>
-                        <Text variant="caption" color="secondary" style={styles.memberUsername}>
-                          @{user.username}
-                        </Text>
-                        {user.bio && (
-                          <Text variant="caption" color="tertiary" style={styles.memberBio} numberOfLines={1}>
-                            {user.bio}
-                          </Text>
-                        )}
-                      </View>
-                      <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => handleAddFriend(user.id)}
-                      >
-                        <Text variant="label" color="white" weight="semibold">
-                          Add
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </Card>
-                ))
-              )}
-            </View>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+            <Text style={styles.emptyTitle}>No Crews Yet</Text>
+            <Text style={styles.emptyDescription}>
+              Create or join a crew to start partying together
+            </Text>
+            <Pressable
+              onPress={handleCreateCrew}
+              style={({ pressed }) => [
+                styles.emptyButton,
+                pressed && styles.emptyButtonPressed,
+              ]}
+            >
+              <Ionicons name="add-circle" size={20} color={Colors.white} />
+              <Text style={styles.emptyButtonText}>Create Your First Crew</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            data={myCrews}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <CrewCard
+                crew={item}
+                onPress={() => handleCrewPress(item.id)}
+              />
+            )}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={Colors.primary}
+              />
+            }
+            ListHeaderComponent={
+              <Text style={styles.listHeader}>
+                My Crews ({myCrews.length})
+              </Text>
+            }
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -446,207 +175,120 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  safeArea: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.base,
-  },
-  headerTitle: {
-    color: Colors.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing['4xl'],
-  },
-  searchCard: {
-    marginBottom: Spacing.lg,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  searchIcon: {
-    marginRight: Spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.text.primary,
-    paddingVertical: 0,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-    padding: Spacing.md,
-  },
-  statIcon: {
-    marginBottom: Spacing.xs,
-  },
-  statValue: {
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xxs,
-  },
-  statLabel: {
-    fontSize: 11,
-    lineHeight: 14,
-  },
-  segmentedControlCard: {
-    marginBottom: Spacing.xl,
-    padding: Spacing.xs,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-  },
-  segment: {
-    flex: 1,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
-    borderRadius: BorderRadius.md,
   },
-  segmentActive: {
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  createButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  content: {
-    marginTop: Spacing.base,
+  createButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.95 }],
   },
-  sectionHeader: {
+  invitesSection: {
     marginBottom: Spacing.lg,
   },
   sectionTitle: {
-    marginBottom: Spacing.xxs,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-  },
-  section: {
-    marginBottom: Spacing.xl,
-  },
-  memberCard: {
-    marginBottom: Spacing.md,
-    padding: Spacing.md,
-  },
-  memberContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.live,
-    borderWidth: 2,
-    borderColor: Colors.background,
-  },
-  memberInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  memberHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.xxs,
-  },
-  memberName: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  bffStar: {
-    marginLeft: Spacing.xs,
-  },
-  memberTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.white,
     marginBottom: Spacing.sm,
-  },
-  titleEmoji: {
-    fontSize: 14,
-  },
-  memberTitle: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  memberStats: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-  memberStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  memberStatText: {
-    fontSize: 11,
-    lineHeight: 14,
-  },
-  lastPartied: {
-    fontSize: 11,
-    lineHeight: 14,
-    marginTop: Spacing.xxs,
-  },
-  memberUsername: {
-    fontSize: 12,
-    marginBottom: Spacing.xs,
-  },
-  memberBio: {
-    fontSize: 11,
-    marginTop: Spacing.xs,
-  },
-  inviteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: Spacing.sm,
-  },
-  addButton: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primary,
   },
-  acceptButton: {
+  invitesList: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.success,
+  },
+  inviteCardContainer: {
+    width: 300,
+    marginRight: Spacing.md,
+  },
+  content: {
+    flex: 1,
+  },
+  list: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
+  },
+  listHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.white,
+    marginBottom: Spacing.md,
   },
   loadingContainer: {
-    paddingVertical: Spacing['3xl'],
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: Spacing['4xl'],
   },
-  emptyContainer: {
-    paddingVertical: Spacing['3xl'],
-    alignItems: 'center',
-  },
-  emptyText: {
+  loadingText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
     marginTop: Spacing.md,
-    maxWidth: 280,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing['4xl'],
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.white,
+    marginBottom: Spacing.sm,
+  },
+  emptyDescription: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    lineHeight: 24,
+  },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyButtonPressed: {
+    opacity: 0.8,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.white,
   },
 });

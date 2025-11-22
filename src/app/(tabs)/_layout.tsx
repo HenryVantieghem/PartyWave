@@ -13,37 +13,35 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.text.secondary,
+        tabBarShowLabel: false, // REFERENCE-MATCHED: Icon-only tab bar
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : Colors.card,
+          backgroundColor: 'transparent',
           borderTopWidth: 0,
           elevation: 0,
-          height: Platform.OS === 'ios' ? 88 : 72,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: Platform.OS === 'ios' ? 88 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 32 : 8,
           paddingTop: 8,
-          paddingHorizontal: Spacing.sm,
-          shadowColor: Colors.primary,
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
+          paddingHorizontal: Spacing.base,
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
             <BlurView
-              intensity={100}
+              intensity={90}
               tint="dark"
               style={{
                 position: 'absolute',
                 top: 0,
-                left: Spacing.sm,
-                right: Spacing.sm,
-                bottom: 0,
+                left: Spacing.base,
+                right: Spacing.base,
+                bottom: Platform.OS === 'ios' ? 32 : 8,
                 borderRadius: BorderRadius['2xl'],
                 borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.12)',
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: 'rgba(26, 26, 30, 0.85)', // REFERENCE-MATCHED: Darker tab bar
                 overflow: 'hidden',
               }}
             />
@@ -52,24 +50,19 @@ export default function TabLayout() {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: Spacing.sm,
-                right: Spacing.sm,
-                bottom: 0,
-                backgroundColor: Colors.card,
+                left: Spacing.base,
+                right: Spacing.base,
+                bottom: 8,
+                backgroundColor: '#1C1C1E',
                 borderRadius: BorderRadius['2xl'],
                 borderWidth: 1,
-                borderColor: Colors.border.default,
+                borderColor: 'rgba(255, 255, 255, 0.08)',
               }}
             />
           )
         ),
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 4,
-        },
         tabBarItemStyle: {
-          paddingVertical: 2,
+          paddingVertical: 6,
         },
       }}
     >
@@ -79,16 +72,11 @@ export default function TabLayout() {
           title: 'Discover',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              {focused ? (
-                <LinearGradient
-                  colors={[Colors.primary + '30', Colors.primary + '10']}
-                  style={styles.iconGradient}
-                >
-                  <Ionicons name="compass" size={24} color={Colors.primary} />
-                </LinearGradient>
-              ) : (
-                <Ionicons name="compass-outline" size={24} color={Colors.text.secondary} />
-              )}
+              <Ionicons
+                name={focused ? "radio-button-on" : "radio-button-on-outline"}
+                size={26}
+                color={focused ? Colors.primary : Colors.text.secondary}
+              />
             </View>
           ),
         }}
@@ -99,16 +87,11 @@ export default function TabLayout() {
           title: 'Parties',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              {focused ? (
-                <LinearGradient
-                  colors={[Colors.primary + '30', Colors.primary + '10']}
-                  style={styles.iconGradient}
-                >
-                  <Ionicons name="calendar" size={24} color={Colors.primary} />
-                </LinearGradient>
-              ) : (
-                <Ionicons name="calendar-outline" size={24} color={Colors.text.secondary} />
-              )}
+              <Ionicons
+                name={focused ? "calendar" : "calendar-outline"}
+                size={26}
+                color={focused ? Colors.primary : Colors.text.secondary}
+              />
             </View>
           ),
         }}
@@ -118,13 +101,27 @@ export default function TabLayout() {
         options={{
           title: '',
           tabBarIcon: ({ focused }) => (
-            <View style={styles.cameraContainer}>
-              <LinearGradient
-                colors={focused ? Gradients.primary : ['#4ECDC4', '#95E1D3']}
-                style={styles.cameraButton}
-              >
-                <Ionicons name="add" size={32} color={Colors.white} />
-              </LinearGradient>
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={focused ? "duplicate" : "duplicate-outline"}
+                size={26}
+                color={focused ? Colors.primary : Colors.text.secondary}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={focused ? "search" : "search-outline"}
+                size={26}
+                color={focused ? Colors.primary : Colors.text.secondary}
+              />
             </View>
           ),
         }}
@@ -132,21 +129,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="crew"
         options={{
-          title: 'Crew',
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.iconContainer}>
-              {focused ? (
-                <LinearGradient
-                  colors={[Colors.primary + '30', Colors.primary + '10']}
-                  style={styles.iconGradient}
-                >
-                  <Ionicons name="people" size={24} color={Colors.primary} />
-                </LinearGradient>
-              ) : (
-                <Ionicons name="people-outline" size={24} color={Colors.text.secondary} />
-              )}
-            </View>
-          ),
+          href: null, // Hide from tab bar but keep route accessible
         }}
       />
       <Tabs.Screen
@@ -155,16 +138,11 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ focused }) => (
             <View style={styles.iconContainer}>
-              {focused ? (
-                <LinearGradient
-                  colors={[Colors.primary + '30', Colors.primary + '10']}
-                  style={styles.iconGradient}
-                >
-                  <Ionicons name="person" size={24} color={Colors.primary} />
-                </LinearGradient>
-              ) : (
-                <Ionicons name="person-outline" size={24} color={Colors.text.secondary} />
-              )}
+              <Ionicons
+                name={focused ? "person-circle" : "person-circle-outline"}
+                size={28}
+                color={focused ? Colors.primary : Colors.text.secondary}
+              />
             </View>
           ),
         }}
@@ -175,39 +153,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconGradient: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primary + '40',
-  },
-  cameraContainer: {
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  cameraButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 });

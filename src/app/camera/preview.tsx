@@ -29,23 +29,62 @@ export default function CameraPreviewScreen() {
   const imageUri = params.uri as string;
 
   const handlePost = async () => {
-    if (!imageUri) return;
+    if (!imageUri || !profile?.id) return;
 
     try {
       setIsPosting(true);
+
+      // Upload image to Supabase Storage
+      const { supabase } = await import('@/lib/supabase');
+      const fileName = `${profile.id}/${Date.now()}.jpg`;
+
+      // Convert URI to blob
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('party-memories')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('party-memories')
+        .getPublicUrl(fileName);
+
+      // Create party_memory record
+      const { error: memoryError } = await supabase
+        .from('party_memories')
+        .insert({
+          party_id: params.partyId as string || null, // Optional: link to specific party
+          user_id: profile.id,
+          media_url: publicUrl,
+          media_type: 'photo',
+          caption: caption.trim() || null,
+        });
+
+      if (memoryError) throw memoryError;
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // TODO: Upload image to Supabase Storage and create party_memory
-      // For now, just show success and navigate back
-      Alert.alert('Success', 'Photo posted to your party memories!', [
+      Alert.alert('Success', '🎉 Photo posted to your party memories!', [
+        {
+          text: 'View Profile',
+          onPress: () => router.push('/(tabs)/profile'),
+        },
         {
           text: 'OK',
           onPress: () => router.back(),
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to post photo');
+      Alert.alert('Error', error.message || 'Failed to post photo. Please try again.');
     } finally {
       setIsPosting(false);
     }

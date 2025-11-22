@@ -200,17 +200,19 @@ export default function CreatePartyScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      Alert.alert('Success', '🎉 Your party has been created!', [
-        {
-          text: 'View Party',
-          onPress: () => router.replace(`/party/${party.id}`),
-        },
-      ]);
+
+      // Navigate immediately to the party detail page
+      router.replace(`/party/${party.id}`);
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Create party error:', error);
-      Alert.alert('Error', error.message || 'Failed to create party. Please try again.');
+
+      // Show error alert with better messaging
+      Alert.alert(
+        'Failed to Create Party',
+        error.message || 'Something went wrong. Please check your connection and try again.',
+        [{ text: 'OK', style: 'cancel' }]
+      );
     }
   };
 

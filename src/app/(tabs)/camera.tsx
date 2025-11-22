@@ -29,6 +29,7 @@ export default function CameraScreen() {
   const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
   const cameraRef = useRef<CameraView>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'none' | 'party' | 'neon' | 'vintage'>('none');
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -146,7 +147,7 @@ export default function CameraScreen() {
         flash={flash}
       >
         <SafeAreaView style={styles.safeArea}>
-          {/* Top Controls */}
+          {/* Top Controls - ENHANCED */}
           <View style={styles.topControls}>
             <TouchableOpacity
               style={styles.controlButton}
@@ -154,6 +155,12 @@ export default function CameraScreen() {
             >
               <Ionicons name="close" size={28} color={Colors.white} />
             </TouchableOpacity>
+
+            <View style={styles.topCenter}>
+              <Text variant="caption" weight="bold" color="white" style={styles.cameraLabel}>
+                {activeFilter !== 'none' ? `${activeFilter.toUpperCase()} 🎨` : 'CAMERA 📸'}
+              </Text>
+            </View>
 
             <TouchableOpacity
               style={styles.controlButton}
@@ -171,6 +178,33 @@ export default function CameraScreen() {
                 color={flash === 'on' ? Colors.accent.gold : Colors.white}
               />
             </TouchableOpacity>
+          </View>
+
+          {/* Filters - NEW! */}
+          <View style={styles.filtersContainer}>
+            <View style={styles.filters}>
+              {(['none', 'party', 'neon', 'vintage'] as const).map((filter) => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[
+                    styles.filterButton,
+                    activeFilter === filter && styles.filterButtonActive,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setActiveFilter(filter);
+                  }}
+                >
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    style={activeFilter === filter ? [styles.filterText, styles.filterTextActive] : styles.filterText}
+                  >
+                    {filter === 'none' ? '✨ Original' : filter === 'party' ? '🎉 Party' : filter === 'neon' ? '💫 Neon' : '📷 Vintage'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Bottom Controls */}
@@ -244,16 +278,62 @@ const styles = StyleSheet.create({
   topControls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
+  },
+  topCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  cameraLabel: {
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+    letterSpacing: 1,
   },
   controlButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  filtersContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 100,
+  },
+  filters: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  filterButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  filterButtonActive: {
+    backgroundColor: 'rgba(255, 94, 120, 0.3)',
+    borderColor: Colors.primary,
+  },
+  filterText: {
+    color: Colors.white,
+    fontSize: 11,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  filterTextActive: {
+    color: Colors.white,
   },
   bottomControls: {
     flexDirection: 'row',

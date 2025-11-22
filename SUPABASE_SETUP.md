@@ -31,6 +31,68 @@ This will create:
 - Database functions and triggers
 - Realtime subscriptions
 
+## 3.5 Run Crew System Migration
+
+**NEW - Crew System Tables (v2.0)**
+
+1. Go to your Supabase project dashboard
+2. Navigate to SQL Editor
+3. Create a new query
+4. Copy and paste the entire contents of `DATABASE_MIGRATION_CREWS.sql`
+5. Run the query
+
+This will create the crew system tables:
+
+### Tables Created:
+- **party_crews** - Main crew/group table
+- **crew_members** - Crew membership and roles
+- **crew_invites** - Crew invitation management
+- **crew_activity** - Crew activity feed
+- **crew_vouches** - Trust network through crew vouching
+
+### Features:
+- ✅ Complete RLS policies for crew privacy
+- ✅ Optimized indexes for performance
+- ✅ Auto-updating member counts via triggers
+- ✅ Auto-expiring invites after 7 days
+- ✅ Crew types: Inner Circle (2-8), Extended (8-20), Open (unlimited)
+- ✅ Privacy settings: Private, Closed, Public
+- ✅ Role-based access: Owner, Admin, Member
+
+### Storage Bucket for Crews:
+
+Create an additional storage bucket:
+
+**crew-avatars** (Public)
+- For crew group pictures
+- Max file size: 2MB
+- Allowed types: image/jpeg, image/png, image/webp
+
+**Storage Policy**:
+```sql
+-- Anyone can view
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'crew-avatars');
+
+-- Crew admins can upload
+CREATE POLICY "Crew admins can upload" ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'crew-avatars' AND auth.role() = 'authenticated');
+
+-- Crew admins can update
+CREATE POLICY "Crew admins can update" ON storage.objects FOR UPDATE
+  USING (bucket_id = 'crew-avatars' AND auth.role() = 'authenticated');
+
+-- Crew admins can delete
+CREATE POLICY "Crew admins can delete" ON storage.objects FOR DELETE
+  USING (bucket_id = 'crew-avatars' AND auth.role() = 'authenticated');
+```
+
+### Enable Realtime for Crew Tables:
+
+In Supabase Dashboard → Database → Replication, enable realtime for:
+- `crew_activity`
+- `crew_members`
+- `crew_invites`
+
 ## 4. Setup Storage Buckets
 
 ### Create Buckets
