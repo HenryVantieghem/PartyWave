@@ -54,6 +54,23 @@
     "plugins": [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": false,
+            "deploymentTarget": "13.0"
+          },
+          "android": {
+            "newArchEnabled": false,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 23
+          }
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Allow The Hangout to access your camera to capture party moments."
