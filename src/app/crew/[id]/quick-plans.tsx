@@ -28,7 +28,7 @@ export default function QuickPlansScreen() {
   const crewId = params.id as string;
 
   const { profile } = useAuthStore();
-  const { quickPlans, fetchQuickPlans, voteOnQuickPlan, confirmQuickPlan } = usePartyStore();
+  const { quickPlans, fetchQuickPlans, voteOnQuickPlan, confirmQuickPlan, subscribeToQuickPlans } = usePartyStore();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,6 +37,14 @@ export default function QuickPlansScreen() {
   useEffect(() => {
     if (crewId) {
       fetchQuickPlans(crewId);
+
+      // Set up real-time subscription
+      const unsubscribe = subscribeToQuickPlans(crewId);
+
+      // Cleanup on unmount
+      return () => {
+        unsubscribe();
+      };
     }
   }, [crewId]);
 
@@ -75,8 +83,7 @@ export default function QuickPlansScreen() {
                 description: plan.description || undefined,
                 date_time: plan.suggested_time || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
                 location_name: plan.suggested_location || 'TBA',
-                creation_mode: 'quick',
-                vibe_tags: ['spontaneous'],
+                vibe_tags: ['casual'],
               });
 
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

@@ -1039,4 +1039,57 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       return false;
     }
   },
+
+  // Real-time subscription to quick plans for a crew
+  subscribeToQuickPlans: (crewId: string) => {
+    // Subscribe to changes in party_quick_plans table
+    const plansChannel = supabase
+      .channel(`quick_plans:${crewId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'party_quick_plans',
+          filter: `crew_id=eq.${crewId}`,
+        },
+        () => {
+          // Refetch quick plans to get latest data with vote counts
+          get().fetchQuickPlans(crewId);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to changes in quick_plan_votes table
+    // This will trigger when any vote changes for plans in this crew
+    const votesChannel = supabase
+      .channel(`quick_plan_votes:${crewId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'quick_plan_votes',
+        },
+        (payload) => {
+          // Check if this vote belongs to a plan in our crew
+          const currentPlans = get().quickPlans[crewId] || [];
+          const affectedPlan = currentPlans.find(
+            (plan) => plan.id === (payload.new as any)?.quick_plan_id || (payload.old as any)?.quick_plan_id
+          );
+
+          if (affectedPlan) {
+            // Refetch to get updated vote counts
+            get().fetchQuickPlans(crewId);
+          }
+        }
+      )
+      .subscribe();
+
+    // Return cleanup function
+    return () => {
+      supabase.removeChannel(plansChannel);
+      supabase.removeChannel(votesChannel);
+    };
+  },
 }));
