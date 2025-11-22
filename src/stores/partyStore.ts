@@ -93,6 +93,7 @@ type PartyState = {
   voteOnQuickPlan: (data: CreateVoteInput) => Promise<boolean>;
   confirmQuickPlan: (planId: string, partyData: CreateQuickPartyInput) => Promise<Party | null>;
   cancelQuickPlan: (planId: string) => Promise<boolean>;
+  subscribeToQuickPlans: (crewId: string) => () => void;
 };
 
 export const usePartyStore = create<PartyState>((set, get) => ({
