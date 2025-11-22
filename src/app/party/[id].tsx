@@ -166,9 +166,46 @@ export default function PartyDetailScreen() {
         <View style={styles.content}>
           {/* Party Info Card */}
           <Card variant="liquid" style={{ marginBottom: Spacing.base }}>
-            <Text variant="h2" weight="bold" style={styles.partyName}>
-              {currentParty.name}
-            </Text>
+            <View style={styles.partyHeader}>
+              <Text variant="h2" weight="bold" style={styles.partyName}>
+                {currentParty.name}
+              </Text>
+              {currentParty.creation_mode && (
+                <View
+                  style={[
+                    styles.modeBadge,
+                    currentParty.creation_mode === 'quick' && styles.modeBadgeQuick,
+                  ]}
+                >
+                  <Ionicons
+                    name={currentParty.creation_mode === 'quick' ? 'flash' : 'calendar'}
+                    size={12}
+                    color={Colors.white}
+                  />
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    color="white"
+                    style={{ marginLeft: 4, textTransform: 'uppercase' }}
+                  >
+                    {currentParty.creation_mode}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Vibe Tags */}
+            {currentParty.vibe_tags && currentParty.vibe_tags.length > 0 && (
+              <View style={styles.vibeTags}>
+                {currentParty.vibe_tags.map((vibe) => (
+                  <View key={vibe} style={styles.vibeTag}>
+                    <Text variant="caption" weight="semibold" color="white">
+                      {vibe}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
               {/* Energy Meter */}
               <View style={styles.energyContainer}>
@@ -284,11 +321,91 @@ export default function PartyDetailScreen() {
             </View>
           </Card>
 
+          {/* Co-Hosts Section */}
+          {partyCoHosts.length > 0 && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text variant="h4" weight="bold">
+                  Co-Hosts ({partyCoHosts.length})
+                </Text>
+                {isHost && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push(`/party/${id}/co-hosts` as any);
+                    }}
+                  >
+                    <Text variant="body" weight="semibold" color="primary">
+                      Manage
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <Card variant="liquid">
+                {partyCoHosts.map((coHost, index) => (
+                  <View key={coHost.id}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <View style={styles.coHostRow}>
+                      <Avatar
+                        source={{ uri: coHost.user?.avatar_url }}
+                        size="md"
+                        fallbackText={coHost.user?.display_name}
+                      />
+                      <View style={styles.coHostInfo}>
+                        <Text variant="body" weight="semibold">
+                          {coHost.user?.display_name}
+                        </Text>
+                        <View style={styles.coHostPermissions}>
+                          {coHost.can_edit && (
+                            <View style={styles.permissionChip}>
+                              <Ionicons name="create-outline" size={10} color={Colors.accent.blue} />
+                              <Text variant="caption" color="secondary" style={{ marginLeft: 2, fontSize: 10 }}>
+                                Edit
+                              </Text>
+                            </View>
+                          )}
+                          {coHost.can_invite && (
+                            <View style={styles.permissionChip}>
+                              <Ionicons name="person-add-outline" size={10} color={Colors.accent.green} />
+                              <Text variant="caption" color="secondary" style={{ marginLeft: 2, fontSize: 10 }}>
+                                Invite
+                              </Text>
+                            </View>
+                          )}
+                          {coHost.can_manage_attendees && (
+                            <View style={styles.permissionChip}>
+                              <Ionicons name="people-outline" size={10} color={Colors.accent.purple} />
+                              <Text variant="caption" color="secondary" style={{ marginLeft: 2, fontSize: 10 }}>
+                                Manage
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </Card>
+            </>
+          )}
+
           {/* Attendees Section */}
           <View style={styles.sectionHeader}>
             <Text variant="h4" weight="bold">
               Going ({attendees.length})
             </Text>
+            {isHost && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push(`/party/${id}/invite-crew` as any);
+                }}
+              >
+                <Text variant="body" weight="semibold" color="primary">
+                  Invite Crew
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
           <Card variant="liquid">
               {attendees.slice(0, 8).map((attendee, index) => (
@@ -618,5 +735,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.base,
+  },
+
+  // Phase 2: Party Header with Mode Badge
+  partyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.accent.purple,
+  },
+  modeBadgeQuick: {
+    backgroundColor: Colors.primary,
+  },
+
+  // Phase 2: Vibe Tags
+  vibeTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  vibeTag: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary,
+  },
+
+  // Phase 2: Co-Hosts
+  coHostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  coHostInfo: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
+  coHostPermissions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  permissionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: BorderRadius.xs,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border.dark,
+    marginVertical: Spacing.xs,
   },
 });
