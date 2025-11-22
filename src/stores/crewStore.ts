@@ -167,7 +167,7 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
         .select(
           `
           *,
-          user:users!inner(id, username, avatar_url, full_name)
+          user:profiles!inner(id, username, avatar_url, display_name)
         `
         )
         .eq('crew_id', crewId)
@@ -210,7 +210,7 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
         .select(
           `
           *,
-          user:users!inner(id, username, avatar_url, full_name)
+          user:profiles!inner(id, username, avatar_url, display_name)
         `
         )
         .eq('crew_id', crewId)
@@ -242,7 +242,7 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
         .select(
           `
           *,
-          actor:users!inner(id, username, avatar_url, full_name)
+          actor:profiles!inner(id, username, avatar_url, display_name)
         `
         )
         .eq('crew_id', crewId)
@@ -279,7 +279,7 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
           `
           *,
           crew:party_crews!inner(*),
-          inviter:users!crew_invites_inviter_id_fkey(id, username, avatar_url, full_name)
+          inviter:profiles!crew_invites_inviter_id_fkey(id, username, avatar_url, display_name)
         `
         )
         .eq('invitee_id', user.id)
@@ -672,7 +672,7 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
         .select(
           `
           *,
-          voucher:users!crew_vouches_voucher_id_fkey(id, username, avatar_url)
+          voucher:profiles!crew_vouches_voucher_id_fkey(id, username, avatar_url)
         `
         )
         .eq('vouched_user_id', userId);

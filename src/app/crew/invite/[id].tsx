@@ -66,8 +66,8 @@ export default function CrewInviteScreen() {
     setSearching(true);
     try {
       const { data, error } = await supabase
-        .from('users')
-        .select('id, username, full_name, avatar_url')
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
         .ilike('username', `%${searchQuery.trim()}%`)
         .limit(20);
 
