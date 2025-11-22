@@ -76,6 +76,9 @@ interface CrewStore {
   vouchForUser: (userId: string, crewId?: string) => Promise<void>;
   fetchUserVouches: (userId: string) => Promise<CrewVouch[]>;
 
+  // ========== Discovery ==========
+  discoverCrews: (userId: string, userLocation?: string | null) => Promise<Crew[]>;
+
   // ========== Utility ==========
   setCurrentCrew: (crew: CrewWithMembers | null) => void;
   clearError: () => void;
@@ -720,6 +723,147 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
       return data || [];
     } catch (error: any) {
       console.error('Error fetching vouches:', error);
+      return [];
+    }
+  },
+
+  // ========================================
+  // DISCOVERY ACTIONS
+  // ========================================
+
+  discoverCrews: async (userId: string, userLocation?: string | null) => {
+    try {
+      // Get user's current crews
+      const myCrewIds = get().myCrews.map((c) => c.id);
+
+      // Fetch public crews that user is not already a member of
+      const { data: publicCrews, error } = await supabase
+        .from('party_crews')
+        .select(
+          `
+          *,
+          creator:profiles!party_crews_created_by_fkey(id, username, display_name, location, avatar_url)
+        `
+        )
+        .eq('active_status', true)
+        .eq('privacy_setting', 'public')
+        .not(
+          'id',
+          'in',
+          `(${myCrewIds.length > 0 ? myCrewIds.join(',') : '00000000-0000-0000-0000-000000000000'})`
+        )
+        .order('reputation_score', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      // Get user's crew members for mutual friend detection
+      const myCrewMemberIds: string[] = [];
+      for (const crew of get().myCrews) {
+        const members = get().crewMembers[crew.id] || [];
+        myCrewMemberIds.push(...members.map((m) => m.user_id));
+      }
+      const uniqueMemberIds = [...new Set(myCrewMemberIds)];
+
+      // Calculate match scores for each crew
+      const crewsWithScores = await Promise.all(
+        (publicCrews || []).map(async (crew) => {
+          let score = 0;
+          const reasons: string[] = [];
+
+          // 1. Location-based matching (25 points max)
+          if (userLocation && crew.creator?.location) {
+            const userLoc = userLocation.toLowerCase();
+            const crewLoc = crew.creator.location.toLowerCase();
+
+            // Exact match
+            if (userLoc === crewLoc) {
+              score += 25;
+              reasons.push('📍 Same location');
+            }
+            // Partial match (same city/area)
+            else if (
+              userLoc.includes(crewLoc) ||
+              crewLoc.includes(userLoc) ||
+              userLoc.split(',')[0] === crewLoc.split(',')[0]
+            ) {
+              score += 15;
+              reasons.push('📍 Nearby location');
+            }
+          }
+
+          // 2. Reputation score (20 points max)
+          const reputationBonus = Math.min(crew.reputation_score / 5, 20);
+          score += reputationBonus;
+          if (crew.reputation_score > 80) {
+            reasons.push('⭐ Highly rated crew');
+          }
+
+          // 3. Optimal community size (15 points)
+          if (crew.member_count >= 5 && crew.member_count <= 50) {
+            score += 15;
+            reasons.push('👥 Active community size');
+          }
+
+          // 4. Similar size to user's crews (10 points)
+          if (get().myCrews.length > 0) {
+            const avgMyCrewSize =
+              get().myCrews.reduce((sum, c) => sum + c.member_count, 0) /
+              get().myCrews.length;
+            const sizeDiff = Math.abs(crew.member_count - avgMyCrewSize);
+            if (sizeDiff < 10) {
+              score += 10;
+              reasons.push('📊 Similar community size');
+            }
+          }
+
+          // 5. Crew type preference (15 points)
+          const openCrews = get().myCrews.filter((c) => c.crew_type === 'open')
+            .length;
+          if (
+            openCrews > get().myCrews.length / 2 &&
+            crew.crew_type === 'open'
+          ) {
+            score += 15;
+            reasons.push('🌐 Matches your crew style');
+          }
+
+          // 6. Mutual members (friend-of-friend) (30 points max)
+          try {
+            const { data: mutualMembers } = await supabase
+              .from('crew_members')
+              .select('user_id')
+              .eq('crew_id', crew.id)
+              .in('user_id', uniqueMemberIds.length > 0 ? uniqueMemberIds : ['00000000-0000-0000-0000-000000000000']);
+
+            if (mutualMembers && mutualMembers.length > 0) {
+              const mutualCount = mutualMembers.length;
+              score += Math.min(mutualCount * 10, 30);
+              reasons.push(
+                `🤝 ${mutualCount} mutual member${mutualCount > 1 ? 's' : ''}`
+              );
+            }
+          } catch (error) {
+            // Ignore mutual member error
+          }
+
+          // 7. Freshness factor (5 points randomness)
+          score += Math.random() * 5;
+
+          return {
+            ...crew,
+            matchScore: Math.round(score),
+            matchReasons: reasons,
+          } as Crew & { matchScore: number; matchReasons: string[] };
+        })
+      );
+
+      // Sort by match score
+      crewsWithScores.sort((a, b) => b.matchScore - a.matchScore);
+
+      return crewsWithScores;
+    } catch (error: any) {
+      logError(error, 'discoverCrews');
       return [];
     }
   },

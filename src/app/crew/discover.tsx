@@ -21,7 +21,6 @@ import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { useCrewStore } from '@/stores/crewStore';
 import { useAuthStore } from '@/stores/authStore';
-import { supabase } from '@/lib/supabase';
 import type { Crew } from '@/types/crew';
 
 interface DiscoveredCrew extends Crew {
@@ -33,7 +32,7 @@ interface DiscoveredCrew extends Crew {
 export default function CrewDiscoverScreen() {
   const router = useRouter();
   const { profile } = useAuthStore();
-  const { myCrews, addCrewMember } = useCrewStore();
+  const { myCrews, addCrewMember, discoverCrews: discoverCrewsFromStore } = useCrewStore();
 
   const [discoveredCrews, setDiscoveredCrews] = useState<DiscoveredCrew[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,106 +48,21 @@ export default function CrewDiscoverScreen() {
     try {
       setLoading(true);
 
-      // Fetch public crews that user is not already a member of
-      const myCrewIds = myCrews.map((c) => c.id);
+      if (!profile?.id) {
+        setLoading(false);
+        return;
+      }
 
-      const { data: publicCrews, error } = await supabase
-        .from('party_crews')
-        .select('*')
-        .eq('active_status', true)
-        .eq('privacy_setting', 'public')
-        .not('id', 'in', `(${myCrewIds.length > 0 ? myCrewIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
-        .order('reputation_score', { ascending: false })
-        .limit(50);
+      // Use the enhanced discovery algorithm from crewStore
+      const crews = await discoverCrewsFromStore(profile.id, profile.location);
 
-      if (error) throw error;
-
-      // Calculate match scores
-      const crewsWithScores = await Promise.all(
-        (publicCrews || []).map(async (crew) => {
-          const { score, reasons } = await calculateMatchScore(crew);
-          return {
-            ...crew,
-            matchScore: score,
-            matchReasons: reasons,
-          };
-        })
-      );
-
-      // Sort by match score
-      crewsWithScores.sort((a, b) => b.matchScore - a.matchScore);
-
-      setDiscoveredCrews(crewsWithScores);
+      setDiscoveredCrews(crews as DiscoveredCrew[]);
     } catch (error) {
       console.error('Error discovering crews:', error);
       Alert.alert('Error', 'Failed to load crews');
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateMatchScore = async (crew: Crew): Promise<{ score: number; reasons: string[] }> => {
-    let score = 0;
-    const reasons: string[] = [];
-
-    // Base score from reputation
-    score += Math.min(crew.reputation_score / 10, 20);
-
-    // Active crew bonus
-    if (crew.member_count > 5 && crew.member_count < 50) {
-      score += 15;
-      reasons.push('Active community size');
-    }
-
-    // Similar size to user's crews
-    if (myCrews.length > 0) {
-      const avgMyCrewSize = myCrews.reduce((sum, c) => sum + c.member_count, 0) / myCrews.length;
-      const sizeDiff = Math.abs(crew.member_count - avgMyCrewSize);
-      if (sizeDiff < 10) {
-        score += 10;
-        reasons.push('Similar community size');
-      }
-    }
-
-    // Crew type preference
-    const openCrews = myCrews.filter((c) => c.crew_type === 'open').length;
-    if (openCrews > myCrews.length / 2 && crew.crew_type === 'open') {
-      score += 15;
-      reasons.push('Matches your crew style');
-    }
-
-    // Check for mutual members
-    try {
-      const { data: mutualMembers } = await supabase
-        .from('crew_members')
-        .select('user_id')
-        .eq('crew_id', crew.id)
-        .in(
-          'user_id',
-          myCrews.flatMap((c) => {
-            // This is a simplified version - in production you'd query the actual members
-            return [];
-          })
-        );
-
-      if (mutualMembers && mutualMembers.length > 0) {
-        score += mutualMembers.length * 5;
-        reasons.push(`${mutualMembers.length} mutual member${mutualMembers.length > 1 ? 's' : ''}`);
-      }
-    } catch (error) {
-      // Ignore error
-    }
-
-    // High reputation bonus
-    if (crew.reputation_score > 80) {
-      score += 10;
-      reasons.push('Highly rated crew');
-    }
-
-    // Add randomness to prevent stale recommendations
-    score += Math.random() * 5;
-
-    return { score, reasons };
   };
 
   const handleRefresh = async () => {
