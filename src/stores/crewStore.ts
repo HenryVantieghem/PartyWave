@@ -70,6 +70,7 @@ interface CrewStore {
     activityType: string,
     metadata?: Record<string, any>
   ) => Promise<void>;
+  subscribeToCrewActivity: (crewId: string) => () => void;
 
   // ========== Vouching ==========
   vouchForUser: (userId: string, crewId?: string) => Promise<void>;
@@ -637,6 +638,44 @@ export const useCrewStore = create<CrewStore>((set, get) => ({
     } catch (error: any) {
       console.error('Error creating activity:', error);
     }
+  },
+
+  // ========================================
+  // SUBSCRIBE TO CREW ACTIVITY (Real-time)
+  // ========================================
+  subscribeToCrewActivity: (crewId: string) => {
+    const channel = supabase
+      .channel(`crew_activity:${crewId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'crew_activity',
+          filter: `crew_id=eq.${crewId}`,
+        },
+        (payload) => {
+          // Add new activity to the beginning of the list
+          set((state) => {
+            const currentActivities = state.crewActivity[crewId] || [];
+            return {
+              crewActivity: {
+                ...state.crewActivity,
+                [crewId]: [payload.new as CrewActivity, ...currentActivities],
+              },
+            };
+          });
+
+          // Optionally refetch to get full user data
+          get().fetchCrewActivity(crewId);
+        }
+      )
+      .subscribe();
+
+    // Return cleanup function
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 
   // ========================================
