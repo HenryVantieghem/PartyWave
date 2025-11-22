@@ -145,131 +145,131 @@ export default function CameraScreen() {
         style={styles.camera}
         facing={facing}
         flash={flash}
-      >
-        <SafeAreaView style={styles.safeArea}>
-          {/* Top Controls - ENHANCED */}
-          <View style={styles.topControls}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="close" size={28} color={Colors.white} />
-            </TouchableOpacity>
+      />
+      {/* Overlay UI - positioned absolutely on top of camera */}
+      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
+        {/* Top Controls - ENHANCED */}
+        <View style={styles.topControls}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="close" size={28} color={Colors.white} />
+          </TouchableOpacity>
 
-            <View style={styles.topCenter}>
-              <Text variant="caption" weight="bold" color="white" style={styles.cameraLabel}>
-                {activeFilter !== 'none' ? `${activeFilter.toUpperCase()} 🎨` : 'CAMERA 📸'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={toggleFlash}
-            >
-              <Ionicons
-                name={
-                  flash === 'on'
-                    ? 'flash'
-                    : flash === 'auto'
-                    ? 'flash-outline'
-                    : 'flash-off'
-                }
-                size={28}
-                color={flash === 'on' ? Colors.accent.gold : Colors.white}
-              />
-            </TouchableOpacity>
+          <View style={styles.topCenter}>
+            <Text variant="caption" weight="bold" color="white" style={styles.cameraLabel}>
+              {activeFilter !== 'none' ? `${activeFilter.toUpperCase()} 🎨` : 'CAMERA 📸'}
+            </Text>
           </View>
 
-          {/* Filters - NEW! */}
-          <View style={styles.filtersContainer}>
-            <View style={styles.filters}>
-              {(['none', 'party', 'neon', 'vintage'] as const).map((filter) => (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    styles.filterButton,
-                    activeFilter === filter && styles.filterButtonActive,
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setActiveFilter(filter);
-                  }}
-                >
-                  <Text
-                    variant="caption"
-                    weight="bold"
-                    style={activeFilter === filter ? [styles.filterText, styles.filterTextActive] : styles.filterText}
-                  >
-                    {filter === 'none' ? '✨ Original' : filter === 'party' ? '🎉 Party' : filter === 'neon' ? '💫 Neon' : '📷 Vintage'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={toggleFlash}
+          >
+            <Ionicons
+              name={
+                flash === 'on'
+                  ? 'flash'
+                  : flash === 'auto'
+                  ? 'flash-outline'
+                  : 'flash-off'
+              }
+              size={28}
+              color={flash === 'on' ? Colors.accent.gold : Colors.white}
+            />
+          </TouchableOpacity>
+        </View>
 
-          {/* Bottom Controls */}
-          <View style={styles.bottomControls}>
-            <TouchableOpacity
-              style={styles.sideButton}
-              onPress={pickFromLibrary}
-            >
-              <Ionicons name="images-outline" size={28} color={Colors.white} />
-            </TouchableOpacity>
-
-            <View style={styles.captureContainer}>
+        {/* Filters - NEW! */}
+        <View style={styles.filtersContainer}>
+          <View style={styles.filters}>
+            {(['none', 'party', 'neon', 'vintage'] as const).map((filter) => (
               <TouchableOpacity
-                style={styles.captureButton}
-                onPress={takePicture}
-                disabled={isCapturing}
-              >
-                <View style={styles.captureButtonOuter}>
-                  <View style={styles.captureButtonInner} />
-                </View>
-              </TouchableOpacity>
-
-              {/* Quick Create Party Hint */}
-              <TouchableOpacity
-                style={styles.quickPartyButton}
-                onPress={async () => {
-                  if (!cameraRef.current || isCapturing) return;
-                  try {
-                    setIsCapturing(true);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    const photo = await cameraRef.current.takePictureAsync({
-                      quality: 0.8,
-                      base64: false,
-                    });
-                    if (photo) {
-                      router.push({
-                        pathname: '/camera/party-preview' as any,
-                        params: { uri: photo.uri },
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Error:', error);
-                  } finally {
-                    setIsCapturing(false);
-                  }
+                key={filter}
+                style={[
+                  styles.filterButton,
+                  activeFilter === filter && styles.filterButtonActive,
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setActiveFilter(filter);
                 }}
               >
-                <LinearGradient colors={Gradients.party} style={styles.quickPartyGradient}>
-                  <Ionicons name="rocket" size={16} color={Colors.white} />
-                  <Text variant="caption" weight="bold" color="white" style={{ marginLeft: 4 }}>
-                    Quick Party
-                  </Text>
-                </LinearGradient>
+                <Text
+                  variant="caption"
+                  weight="bold"
+                  style={activeFilter === filter ? [styles.filterText, styles.filterTextActive] : styles.filterText}
+                >
+                  {filter === 'none' ? '✨ Original' : filter === 'party' ? '🎉 Party' : filter === 'neon' ? '💫 Neon' : '📷 Vintage'}
+                </Text>
               </TouchableOpacity>
-            </View>
+            ))}
+          </View>
+        </View>
 
+        {/* Bottom Controls */}
+        <View style={styles.bottomControls}>
+          <TouchableOpacity
+            style={styles.sideButton}
+            onPress={pickFromLibrary}
+          >
+            <Ionicons name="images-outline" size={28} color={Colors.white} />
+          </TouchableOpacity>
+
+          <View style={styles.captureContainer}>
             <TouchableOpacity
-              style={styles.sideButton}
-              onPress={toggleCameraFacing}
+              style={styles.captureButton}
+              onPress={takePicture}
+              disabled={isCapturing}
             >
-              <Ionicons name="camera-reverse-outline" size={28} color={Colors.white} />
+              <View style={styles.captureButtonOuter}>
+                <View style={styles.captureButtonInner} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Quick Create Party Hint */}
+            <TouchableOpacity
+              style={styles.quickPartyButton}
+              onPress={async () => {
+                if (!cameraRef.current || isCapturing) return;
+                try {
+                  setIsCapturing(true);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  const photo = await cameraRef.current.takePictureAsync({
+                    quality: 0.8,
+                    base64: false,
+                  });
+                  if (photo) {
+                    router.push({
+                      pathname: '/camera/party-preview' as any,
+                      params: { uri: photo.uri },
+                    });
+                  }
+                } catch (error) {
+                  console.error('Error:', error);
+                } finally {
+                  setIsCapturing(false);
+                }
+              }}
+            >
+              <LinearGradient colors={Gradients.party} style={styles.quickPartyGradient}>
+                <Ionicons name="rocket" size={16} color={Colors.white} />
+                <Text variant="caption" weight="bold" color="white" style={{ marginLeft: 4 }}>
+                  Quick Party
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </CameraView>
+
+          <TouchableOpacity
+            style={styles.sideButton}
+            onPress={toggleCameraFacing}
+          >
+            <Ionicons name="camera-reverse-outline" size={28} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -283,6 +283,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   camera: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     flex: 1,
   },
   loadingContainer: {

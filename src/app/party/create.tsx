@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -25,12 +25,27 @@ import { Colors, Gradients } from '@/constants/colors';
 import { Spacing, Layout, BorderRadius, Shadows } from '@/constants/theme';
 import { usePartyStore } from '@/stores/partyStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useCrewStore } from '@/stores/crewStore';
 import { formatDate, formatTime, generateInviteCode } from '@/lib/utils';
+import { VibeTag } from '@/types/party';
+import { CrewMember } from '@/types/crew';
+
+const VIBE_TAGS: { tag: VibeTag; emoji: string; color: string }[] = [
+  { tag: 'lit', emoji: '🔥', color: Colors.primary },
+  { tag: 'chill', emoji: '😌', color: Colors.accent.blue },
+  { tag: 'wild', emoji: '🎉', color: Colors.accent.purple },
+  { tag: 'intimate', emoji: '💫', color: Colors.secondary },
+  { tag: 'classy', emoji: '🥂', color: Colors.accent.gold },
+  { tag: 'casual', emoji: '👋', color: Colors.accent.green },
+  { tag: 'rave', emoji: '💃', color: Colors.accent.neon },
+  { tag: 'lounge', emoji: '🍸', color: Colors.accent.orange },
+];
 
 export default function CreatePartyScreen() {
   const router = useRouter();
-  const { createParty, isLoading } = usePartyStore();
+  const { createPlannedParty, isLoading } = usePartyStore();
   const { profile } = useAuthStore();
+  const { myCrews, fetchMyCrews, crewMembers, fetchCrewMembers } = useCrewStore();
 
   // Mode selector - Quick vs Planned
   const [showModeSelector, setShowModeSelector] = useState(true);
@@ -46,6 +61,25 @@ export default function CreatePartyScreen() {
   const [locationAddress, setLocationAddress] = useState('');
   const [maxAttendees, setMaxAttendees] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+
+  // Phase 2 fields
+  const [selectedVibes, setSelectedVibes] = useState<VibeTag[]>([]);
+  const [energyLevel, setEnergyLevel] = useState(75);
+  const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
+  const [rsvpDeadline, setRsvpDeadline] = useState<Date | null>(null);
+  const [showRsvpPicker, setShowRsvpPicker] = useState(false);
+  const [selectedCoHosts, setSelectedCoHosts] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchMyCrews();
+  }, []);
+
+  // Fetch crew members when crew is selected
+  useEffect(() => {
+    if (selectedCrewId) {
+      fetchCrewMembers(selectedCrewId);
+    }
+  }, [selectedCrewId]);
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -184,23 +218,25 @@ export default function CreatePartyScreen() {
         }
       }
 
-      // Generate invite code if private (database will auto-generate, but we can set it)
-      const inviteCode = isPrivate ? generateInviteCode() : undefined;
-
-      const party = await createParty({
-        host_id: profile.id,
+      const party = await createPlannedParty({
         name: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         date_time: dateTime.toISOString(),
         location_name: locationName.trim(),
         location_address: locationAddress.trim() || undefined,
-        cover_image_url: coverImageUrl,
-        max_attendees: maxAttendees ? parseInt(maxAttendees) : undefined,
+        cover_photo_url: coverImageUrl,
+        vibe_tags: selectedVibes,
+        energy_level: energyLevel,
+        capacity: maxAttendees ? parseInt(maxAttendees) : undefined,
+        rsvp_deadline: rsvpDeadline?.toISOString(),
+        crew_id: selectedCrewId || undefined,
         is_private: isPrivate,
-        invite_code: inviteCode,
-        energy_score: 0,
-        status: 'upcoming',
+        co_host_ids: selectedCoHosts.length > 0 ? selectedCoHosts : undefined,
       });
+
+      if (!party) {
+        throw new Error('Failed to create party');
+      }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -473,6 +509,204 @@ export default function CreatePartyScreen() {
             </Card>
           </View>
 
+          {/* Vibe Tags */}
+          <View style={styles.section}>
+            <Text variant="h4" weight="bold" style={styles.sectionTitle}>
+              Party Vibe
+            </Text>
+            <View style={styles.vibeGrid}>
+              {VIBE_TAGS.map(({ tag, emoji, color }) => (
+                <TouchableOpacity
+                  key={tag}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedVibes((prev) =>
+                      prev.includes(tag) ? prev.filter((v) => v !== tag) : [...prev, tag]
+                    );
+                  }}
+                  style={[
+                    styles.vibeChip,
+                    selectedVibes.includes(tag) && {
+                      backgroundColor: color,
+                      borderColor: color,
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.vibeEmoji}>{emoji}</Text>
+                  <Text
+                    variant="caption"
+                    weight="semibold"
+                    color={selectedVibes.includes(tag) ? 'white' : 'secondary'}
+                    style={{ marginLeft: 6 }}
+                  >
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Energy Level */}
+          <View style={styles.section}>
+            <Text variant="h4" weight="bold" style={styles.sectionTitle}>
+              Energy Level
+            </Text>
+            <Card variant="liquid">
+              <View style={styles.energyHeader}>
+                <Text variant="body" weight="semibold">
+                  Expected Energy
+                </Text>
+                <View style={styles.energyBadge}>
+                  <Text variant="caption" weight="bold" color="white">
+                    {energyLevel}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.energyBar}>
+                <View style={[styles.energyFill, { width: `${energyLevel}%` }]}>
+                  <LinearGradient
+                    colors={Gradients.party}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </View>
+              </View>
+              <View style={styles.energyButtons}>
+                {[25, 50, 75, 100].map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setEnergyLevel(level);
+                    }}
+                    style={[
+                      styles.energyButton,
+                      energyLevel === level && styles.energyButtonActive,
+                    ]}
+                  >
+                    <Text
+                      variant="caption"
+                      weight="semibold"
+                      color={energyLevel === level ? 'white' : 'secondary'}
+                    >
+                      {level}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Card>
+          </View>
+
+          {/* Crew Selection */}
+          {myCrews.length > 0 && (
+            <View style={styles.section}>
+              <Text variant="h4" weight="bold" style={styles.sectionTitle}>
+                Party Crew (Optional)
+              </Text>
+              <Card variant="liquid">
+                <Text variant="caption" color="secondary" style={{ marginBottom: Spacing.md }}>
+                  Link this party to a crew
+                </Text>
+                {myCrews.map((crew) => (
+                  <TouchableOpacity
+                    key={crew.id}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedCrewId(selectedCrewId === crew.id ? null : crew.id);
+                    }}
+                    style={[
+                      styles.crewOption,
+                      selectedCrewId === crew.id && styles.crewOptionActive,
+                    ]}
+                  >
+                    <View style={styles.crewInfo}>
+                      <Text variant="body" weight="semibold">
+                        {crew.name}
+                      </Text>
+                      <Text variant="caption" color="secondary">
+                        {crew.member_count} members
+                      </Text>
+                    </View>
+                    {selectedCrewId === crew.id && (
+                      <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </Card>
+            </View>
+          )}
+
+          {/* Co-Hosts Selection */}
+          {selectedCrewId && crewMembers[selectedCrewId] && crewMembers[selectedCrewId].length > 1 && (
+            <View style={styles.section}>
+              <Text variant="h4" weight="bold" style={styles.sectionTitle}>
+                Co-Hosts (Optional)
+              </Text>
+              <Card variant="liquid">
+                <Text variant="caption" color="secondary" style={{ marginBottom: Spacing.md }}>
+                  Give crew members host permissions
+                </Text>
+                {crewMembers[selectedCrewId]
+                  .filter((member: CrewMember) => member.user_id !== profile?.id)
+                  .map((member: CrewMember) => (
+                    <TouchableOpacity
+                      key={member.id}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setSelectedCoHosts((prev) =>
+                          prev.includes(member.user_id)
+                            ? prev.filter((id) => id !== member.user_id)
+                            : [...prev, member.user_id]
+                        );
+                      }}
+                      style={[
+                        styles.coHostOption,
+                        selectedCoHosts.includes(member.user_id) && styles.coHostOptionActive,
+                      ]}
+                    >
+                      <View style={styles.coHostInfo}>
+                        <View style={styles.coHostAvatar}>
+                          {member.user?.avatar_url ? (
+                            <Image
+                              source={{ uri: member.user.avatar_url }}
+                              style={styles.coHostAvatarImage}
+                            />
+                          ) : (
+                            <View style={styles.coHostAvatarPlaceholder}>
+                              <Text variant="h4" weight="bold" color="white">
+                                {(member.user?.full_name || member.user?.username)?.charAt(0).toUpperCase() || '?'}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text variant="body" weight="semibold">
+                            {member.user?.full_name || member.user?.username || 'Unknown'}
+                          </Text>
+                          <Text variant="caption" color="secondary">
+                            {member.role === 'admin' ? 'Crew Admin' : 'Crew Member'}
+                          </Text>
+                        </View>
+                      </View>
+                      {selectedCoHosts.includes(member.user_id) && (
+                        <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                {selectedCoHosts.length > 0 && (
+                  <View style={styles.coHostSummary}>
+                    <Ionicons name="people" size={16} color={Colors.accent.blue} />
+                    <Text variant="caption" color="secondary" style={{ marginLeft: Spacing.xs }}>
+                      {selectedCoHosts.length} co-host{selectedCoHosts.length > 1 ? 's' : ''} selected
+                    </Text>
+                  </View>
+                )}
+              </Card>
+            </View>
+          )}
+
           {/* Party Settings */}
           <View style={styles.section}>
             <Text variant="h4" weight="bold" style={styles.sectionTitle}>
@@ -487,6 +721,27 @@ export default function CreatePartyScreen() {
                 keyboardType="number-pad"
                 maxLength={4}
               />
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowRsvpPicker(true);
+                }}
+                style={styles.dateTimeButton}
+              >
+                <View style={styles.dateTimeIcon}>
+                  <Ionicons name="time-outline" size={20} color={Colors.accent.orange} />
+                </View>
+                <View style={styles.dateTimeText}>
+                  <Text variant="caption" color="secondary">
+                    RSVP Deadline (Optional)
+                  </Text>
+                  <Text variant="body" weight="semibold">
+                    {rsvpDeadline ? formatDate(rsvpDeadline) : 'No deadline'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.text.tertiary} />
+              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => {
@@ -614,6 +869,61 @@ export default function CreatePartyScreen() {
               themeVariant="dark"
               style={styles.picker}
             />
+          </View>
+        </View>
+      )}
+
+      {/* RSVP Deadline Picker Modal */}
+      {showRsvpPicker && (
+        <View style={styles.pickerModal}>
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <Text variant="h4" weight="bold">
+                RSVP Deadline
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowRsvpPicker(false)}
+                style={styles.pickerClose}
+              >
+                <Ionicons name="close" size={24} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={rsvpDeadline || new Date()}
+              mode="datetime"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, selected) => {
+                if (Platform.OS === 'android') {
+                  setShowRsvpPicker(false);
+                }
+                if (selected) {
+                  setRsvpDeadline(selected);
+                  if (Platform.OS === 'ios') {
+                    setShowRsvpPicker(false);
+                  }
+                }
+              }}
+              minimumDate={new Date()}
+              maximumDate={dateTime}
+              textColor={Colors.white}
+              themeVariant="dark"
+              style={styles.picker}
+            />
+            {rsvpDeadline && (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setRsvpDeadline(null);
+                  setShowRsvpPicker(false);
+                }}
+                style={styles.clearButton}
+              >
+                <Text variant="body" color="secondary">
+                  Clear Deadline
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -904,5 +1214,144 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
+  },
+
+  // Phase 2: Vibe Tags
+  vibeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  vibeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  vibeEmoji: {
+    fontSize: 16,
+  },
+
+  // Phase 2: Energy Level
+  energyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  energyBadge: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+  },
+  energyBar: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: BorderRadius.sm,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
+  },
+  energyFill: {
+    height: '100%',
+    borderRadius: BorderRadius.sm,
+  },
+  energyButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  energyButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  energyButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+
+  // Phase 2: Crew Selection
+  crewOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    marginBottom: Spacing.sm,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  crewOptionActive: {
+    backgroundColor: 'rgba(255, 94, 120, 0.1)',
+    borderColor: Colors.primary,
+  },
+  crewInfo: {
+    flex: 1,
+  },
+
+  // Phase 2: RSVP Deadline
+  clearButton: {
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+
+  // Phase 2: Co-Hosts
+  coHostOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    marginBottom: Spacing.sm,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  coHostOptionActive: {
+    backgroundColor: 'rgba(255, 94, 120, 0.1)',
+    borderColor: Colors.primary,
+  },
+  coHostInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: Spacing.md,
+  },
+  coHostAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  coHostAvatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coHostAvatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coHostSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.md,
+    marginTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.dark,
   },
 });
